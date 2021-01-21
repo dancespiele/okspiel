@@ -1,14 +1,16 @@
+use super::ConnectNodeModel;
+use crate::db::{get_connections, init_tree};
 use iced::{button, text_input, Align, Button, Column, Element, Length, Row, Text, TextInput};
 
 pub struct ConnectNode {
     address: text_input::State,
-    address_value: String,
+    pub address_value: String,
     username: text_input::State,
-    username_value: String,
+    pub username_value: String,
     password: text_input::State,
-    password_value: String,
+    pub password_value: String,
     phrase: text_input::State,
-    phrase_value: String,
+    pub phrase_value: String,
     connect: button::State,
 }
 
@@ -51,6 +53,26 @@ impl ConnectNode {
                 self.phrase_value = phase;
             }
             Message::Connect => {
+                let address = self.address_value.clone();
+                let username = self.username_value.clone();
+                let password = self.password_value.clone();
+                let phrase_value = self.phrase_value.clone();
+
+                tokio::task::spawn_blocking(move || async {
+                    let db = init_tree().await.unwrap();
+                    let mut connections = get_connections(db.clone());
+
+                    let connect_node =
+                        ConnectNodeModel::from((address, username, password, phrase_value));
+
+                    connections.push(connect_node);
+
+                    let connections_string = serde_json::to_string(&connections).unwrap();
+
+                    db.insert("connections", connections_string.as_bytes())
+                        .unwrap();
+                });
+
                 self.address_value = String::from("");
                 self.username_value = String::from("");
                 self.password_value = String::from("");
