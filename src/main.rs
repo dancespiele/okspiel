@@ -1,24 +1,23 @@
 #[macro_use]
 extern crate serde_derive;
-
-#[macro_use]
 extern crate serde_json;
 
 mod connect;
 mod db;
+mod node;
 mod ok_client;
-mod screens;
 
-use crate::screens::{MainScreen, MainScreenMsg};
+use crate::connect::{ConnectMsg, ConnectNode};
+use db::ConnectionDB;
 use iced::{executor, Application, Command, Element, Settings};
 
 struct OkspielMainView {
-    main_screen: MainScreen,
+    connect_node: ConnectNode,
 }
 
 #[derive(Debug)]
 pub enum Message {
-    MainScreenMessage(MainScreenMsg),
+    ConnectMessage(ConnectMsg),
 }
 
 impl Application for OkspielMainView {
@@ -27,8 +26,13 @@ impl Application for OkspielMainView {
     type Flags = ();
 
     fn new(_flags: ()) -> (OkspielMainView, Command<Message>) {
-        let main_screen = MainScreen::new();
-        (OkspielMainView { main_screen }, Command::none())
+        let connections_task = get_connections();
+
+        let connect_node = ConnectNode::new();
+        (
+            OkspielMainView { connect_node },
+            Command::perform(connections_task, Message::ConnectMessage),
+        )
     }
 
     fn title(&self) -> String {
@@ -37,8 +41,8 @@ impl Application for OkspielMainView {
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::MainScreenMessage(main_screen_msg) => {
-                self.main_screen.update(main_screen_msg);
+            Message::ConnectMessage(connect_node_msg) => {
+                self.connect_node.update(connect_node_msg);
             }
         };
 
@@ -46,8 +50,14 @@ impl Application for OkspielMainView {
     }
 
     fn view(&mut self) -> Element<Message> {
-        self.main_screen.view().map(Message::MainScreenMessage)
+        self.connect_node.view().map(Message::ConnectMessage)
     }
+}
+
+async fn get_connections() -> ConnectMsg {
+    let connection_db = ConnectionDB::new().await;
+
+    ConnectMsg::GetConnections(connection_db.get_connections())
 }
 
 fn main() -> iced::Result {
