@@ -42,7 +42,9 @@ impl Application for OkspielMainView {
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::ConnectMessage(connect_node_msg) => {
-                self.connect_node.update(connect_node_msg);
+                self.connect_node
+                    .update(connect_node_msg)
+                    .map(Message::ConnectMessage);
             }
         };
 
