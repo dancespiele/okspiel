@@ -95,10 +95,7 @@ impl ConnectNode {
                     self.phrase_value.clone(),
                 );
 
-                return Command::perform(
-                    async move { add_connection_task.await },
-                    Message::GetConnections,
-                );
+                return Command::perform(add_connection_task, Message::GetConnections);
             }
             Message::DrawNodeScreen(i, node_screen_msg) => {
                 self.node_screens[i].update(node_screen_msg);
