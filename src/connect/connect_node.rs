@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use super::ConnectNodeModel;
 use crate::db::ConnectionDB;
 use crate::node::{NodeScreen, NodeScreenMsg};
@@ -22,6 +24,7 @@ pub struct ConnectNode {
     show_connect_config: bool,
     add_node: button::State,
     node_screens: Vec<NodeScreen>,
+    show_connecion_error: (bool, String),
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +38,7 @@ pub enum Message {
     Connect,
     ShowConnectConfig,
     DrawNodeScreen(usize, NodeScreenMsg),
+    SetConnectionError(String),
 }
 
 impl ConnectNode {
@@ -55,6 +59,7 @@ impl ConnectNode {
             show_connect_config: false,
             add_node: button::State::new(),
             node_screens: vec![],
+            show_connecion_error: (false, String::from("")),
         }
     }
 
@@ -78,6 +83,9 @@ impl ConnectNode {
             Message::SetPhrase(phase) => {
                 self.phrase_value = phase;
             }
+            Message::SetConnectionError(error) => {
+                self.show_connecion_error = (true, error);
+            }
             Message::GetConnections(connections) => {
                 self.connections_node_model = connections.to_vec();
 
@@ -87,6 +95,8 @@ impl ConnectNode {
                 }
             }
             Message::Connect => {
+                self.show_connecion_error = (false, String::from(""));
+
                 let add_connection_task = add_connection(
                     self.name_value.clone(),
                     self.address_value.clone(),
@@ -95,7 +105,7 @@ impl ConnectNode {
                     self.phrase_value.clone(),
                 );
 
-                return Command::perform(add_connection_task, Message::GetConnections);
+                return Command::perform(add_connection_task, |m| m);
             }
             Message::DrawNodeScreen(i, node_screen_msg) => {
                 self.node_screens[i].update(node_screen_msg);
@@ -218,7 +228,15 @@ impl ConnectNode {
                                         Button::new(&mut self.connect, Text::new("Connect"))
                                             .on_press(Message::Connect),
                                     ),
-                                ),
+                                )
+                                .push(if self.show_connecion_error.0 {
+                                    Row::new()
+                                        .padding(10)
+                                        .height(Length::FillPortion(2))
+                                        .push(Text::new(self.show_connecion_error.1.clone()))
+                                } else {
+                                    Row::new()
+                                }),
                         )
                 } else {
                     Column::new().width(Length::FillPortion(3))
@@ -234,7 +252,7 @@ async fn add_connection(
     username: String,
     password: String,
     phrase_value: String,
-) -> Vec<ConnectNodeModel> {
+) -> Message {
     let connection_db = ConnectionDB::new().await;
 
     let mut connections = connection_db.get_connections();
@@ -249,7 +267,12 @@ async fn add_connection(
 
     let connection_db_string = serde_json::to_string(&connections).unwrap();
 
-    connection_db.insert_model("connections".to_string(), connection_db_string);
+    let response_result =
+        connection_db.insert_model("connections".to_string(), connection_db_string);
 
-    connections
+    if let Err(response) = response_result {
+        Message::SetConnectionError(response.to_string())
+    } else {
+        Message::GetConnections(connections)
+    }
 }

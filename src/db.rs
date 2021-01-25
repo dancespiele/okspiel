@@ -1,6 +1,6 @@
 use crate::connect::ConnectNodeModel;
 use dirs::home_dir;
-use sled::Db;
+use sled::{Db, Error, IVec};
 use std::str;
 use tokio::fs::{create_dir, read_dir};
 
@@ -38,7 +38,7 @@ impl ConnectionDB {
         }
     }
 
-    pub fn insert_model(&self, key: String, model: String) {
-        self.db.insert(key, model.as_bytes()).unwrap();
+    pub fn insert_model(&self, key: String, model: String) -> Result<Option<IVec>, Error> {
+        self.db.insert(key, model.as_bytes())
     }
 }
