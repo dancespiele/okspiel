@@ -88,6 +88,11 @@ impl ConnectNode {
             }
             Message::GetConnections(connections) => {
                 self.connections_node_model = connections.to_vec();
+                self.name_value = String::from("");
+                self.address_value = String::from("");
+                self.username_value = String::from("");
+                self.password_value = String::from("");
+                self.phrase_value = String::from("");
 
                 for c in connections {
                     let node_screen = NodeScreen::new(c);
@@ -265,10 +270,16 @@ async fn add_connection(
         phrase_value,
     )));
 
-    let connection_db_string = serde_json::to_string(&connections).unwrap();
+    let connection_db_string_result = serde_json::to_string(&connections);
 
-    let response_result =
-        connection_db.insert_model("connections".to_string(), connection_db_string);
+    if let Err(serde_error) = connection_db_string_result {
+        return Message::SetConnectionError(serde_error.to_string());
+    }
+
+    let response_result = connection_db.insert_model(
+        "connections".to_string(),
+        connection_db_string_result.unwrap(),
+    );
 
     if let Err(response) = response_result {
         Message::SetConnectionError(response.to_string())
