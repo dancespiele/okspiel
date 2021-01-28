@@ -25,6 +25,7 @@ pub struct ConnectNode {
     add_node: button::State,
     node_screens: Vec<NodeScreen>,
     show_connecion_error: (bool, String),
+    show_disconnect_error: (bool, String),
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +40,7 @@ pub enum Message {
     ShowConnectConfig,
     DrawNodeScreen(usize, NodeScreenMsg),
     SetConnectionError(String),
+    Disconnect(String),
 }
 
 impl ConnectNode {
@@ -60,6 +62,7 @@ impl ConnectNode {
             add_node: button::State::new(),
             node_screens: vec![],
             show_connecion_error: (false, String::from("")),
+            show_disconnect_error: (false, String::from("")),
         }
     }
 
@@ -111,6 +114,12 @@ impl ConnectNode {
                 );
 
                 return Command::perform(add_connection_task, |m| m);
+            }
+            Message::Disconnect(name) => {
+                self.show_disconnect_error = (false, String::from(""));
+                let delete_connection_task = delete_connection(name);
+
+                return Command::perform(delete_connection_task, |m| m);
             }
             Message::DrawNodeScreen(i, node_screen_msg) => {
                 self.node_screens[i].update(node_screen_msg);
@@ -269,6 +278,33 @@ async fn add_connection(
         password,
         phrase_value,
     )));
+
+    let connection_db_string_result = serde_json::to_string(&connections);
+
+    if let Err(serde_error) = connection_db_string_result {
+        return Message::SetConnectionError(serde_error.to_string());
+    }
+
+    let response_result = connection_db.insert_model(
+        "connections".to_string(),
+        connection_db_string_result.unwrap(),
+    );
+
+    if let Err(response) = response_result {
+        Message::SetConnectionError(response.to_string())
+    } else {
+        Message::GetConnections(connections)
+    }
+}
+
+async fn delete_connection(name: String) -> Message {
+    let connection_db = ConnectionDB::new().await;
+
+    let mut connections = connection_db.get_connections();
+
+    let index = connections.iter().position(|c| *c.name == name).unwrap();
+
+    connections.remove(index);
 
     let connection_db_string_result = serde_json::to_string(&connections);
 

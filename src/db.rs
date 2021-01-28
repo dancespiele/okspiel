@@ -28,13 +28,7 @@ impl ConnectionDB {
             let connections_string = str::from_utf8(&connections).unwrap();
             serde_json::from_str(connections_string).unwrap()
         } else {
-            vec![ConnectNodeModel::from((
-                String::from(""),
-                String::from(""),
-                String::from(""),
-                String::from(""),
-                String::from(""),
-            ))]
+            vec![]
         }
     }
 
