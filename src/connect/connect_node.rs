@@ -1,8 +1,6 @@
-use std::fmt::format;
-
 use super::ConnectNodeModel;
 use crate::db::ConnectionDB;
-use crate::node::{NodeScreen, NodeScreenMsg};
+use crate::node::NodeScreen;
 use iced::{
     button, text_input, Align, Button, Column, Command, Container, Element, Length, Row, Text,
     TextInput,
@@ -38,7 +36,6 @@ pub enum Message {
     GetConnections(Vec<ConnectNodeModel>),
     Connect,
     ShowConnectConfig,
-    DrawNodeScreen(usize, NodeScreenMsg),
     SetConnectionError(String),
     Disconnect(String),
 }
@@ -89,18 +86,21 @@ impl ConnectNode {
             Message::SetConnectionError(error) => {
                 self.show_connecion_error = (true, error);
             }
-            Message::GetConnections(connections) => {
+            Message::GetConnections(ref connections) => {
                 self.connections_node_model = connections.to_vec();
                 self.name_value = String::from("");
                 self.address_value = String::from("");
                 self.username_value = String::from("");
                 self.password_value = String::from("");
                 self.phrase_value = String::from("");
+                let mut node_screens: Vec<NodeScreen> = vec![];
 
                 for c in connections {
-                    let node_screen = NodeScreen::new(c);
-                    self.node_screens.push(node_screen);
+                    let node_screen = NodeScreen::new(c.clone());
+                    node_screens.push(node_screen);
                 }
+
+                self.node_screens = node_screens;
             }
             Message::Connect => {
                 self.show_connecion_error = (false, String::from(""));
@@ -121,9 +121,6 @@ impl ConnectNode {
 
                 return Command::perform(delete_connection_task, |m| m);
             }
-            Message::DrawNodeScreen(i, node_screen_msg) => {
-                self.node_screens[i].update(node_screen_msg);
-            }
         }
 
         Command::none()
@@ -138,12 +135,11 @@ impl ConnectNode {
                     Column::new()
                         .width(Length::FillPortion(1))
                         .align_items(Align::Center)
-                        .push::<Row<Message>>(self.node_screens.iter_mut().enumerate().fold(
-                            Row::new().padding(5),
-                            |row, (i, n)| {
-                                row.push(n.view().map(move |m| Message::DrawNodeScreen(i, m)))
-                            },
-                        ))
+                        .push::<Column<Message>>(
+                            self.node_screens
+                                .iter_mut()
+                                .fold(Column::new().padding(5), |column, n| column.push(n.view())),
+                        )
                         .push::<Element<Message>>(
                             Button::new(&mut self.add_node, Text::new("Add Node"))
                                 .on_press(Message::ShowConnectConfig)
@@ -300,13 +296,14 @@ async fn add_connection(
 async fn delete_connection(name: String) -> Message {
     let connection_db = ConnectionDB::new().await;
 
-    let mut connections = connection_db.get_connections();
+    let connections = connection_db.get_connections();
 
-    let index = connections.iter().position(|c| *c.name == name).unwrap();
+    let connections_filtered = connections
+        .into_iter()
+        .filter(|c| *c.name != name)
+        .collect();
 
-    connections.remove(index);
-
-    let connection_db_string_result = serde_json::to_string(&connections);
+    let connection_db_string_result = serde_json::to_string(&connections_filtered);
 
     if let Err(serde_error) = connection_db_string_result {
         return Message::SetConnectionError(serde_error.to_string());
@@ -320,6 +317,6 @@ async fn delete_connection(name: String) -> Message {
     if let Err(response) = response_result {
         Message::SetConnectionError(response.to_string())
     } else {
-        Message::GetConnections(connections)
+        Message::GetConnections(connections_filtered)
     }
 }
