@@ -9,4 +9,4 @@ or you can send Okcash to the address `PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx`
 
 ## License
 
-Okspiel is MIT licensed. See [license](LICENSE) 
+Okspiel is MIT licensed. See [license](LICENSE.md) 
