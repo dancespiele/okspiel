@@ -7,10 +7,10 @@ pub struct Request {
     pub id: Value,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Info {
-    walletversion: f32,
-    balance: f32,
+    pub walletversion: f32,
+    pub balance: f32,
     txcount: f32,
     keypoololdest: f32,
     keypoolsize: f32,
@@ -19,7 +19,7 @@ pub struct Info {
 
 #[derive(Debug, Deserialize)]
 pub struct WalletInfo {
-    result: Info,
+    pub result: Info,
 }
 
 impl From<(String, Option<Value>, Value)> for Request {

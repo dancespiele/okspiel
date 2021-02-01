@@ -24,7 +24,7 @@ impl RqClient {
         }
     }
 
-    pub fn get_request_builder(&self) -> RequestBuilder {
+    fn get_request_builder(&self) -> RequestBuilder {
         let url = self.url.clone();
         let request_builder = self.client.post(&url);
 

@@ -1,6 +1,8 @@
 use super::ConnectNodeModel;
 use crate::db::ConnectionDB;
-use crate::node::NodeScreen;
+use crate::node::{NodeOptions, NodeScreen};
+use crate::ok_client::{Info, RqClient};
+use crate::styles::ButtonStyles;
 use iced::{
     button, text_input, Align, Button, Column, Command, Container, Element, Length, Row, Text,
     TextInput,
@@ -24,6 +26,9 @@ pub struct ConnectNode {
     node_screens: Vec<NodeScreen>,
     show_connecion_error: (bool, String),
     show_disconnect_error: (bool, String),
+    node_info: Option<Info>,
+    connection_selected: Option<NodeScreen>,
+    show_option: Option<NodeOptions>,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +43,8 @@ pub enum Message {
     ShowConnectConfig,
     SetConnectionError(String),
     Disconnect(String),
+    SelectNodeOption(NodeOptions, String),
+    ShowInfo(Info),
 }
 
 impl ConnectNode {
@@ -60,6 +67,9 @@ impl ConnectNode {
             node_screens: vec![],
             show_connecion_error: (false, String::from("")),
             show_disconnect_error: (false, String::from("")),
+            node_info: None,
+            connection_selected: None,
+            show_option: None,
         }
     }
 
@@ -79,6 +89,30 @@ impl ConnectNode {
             }
             Message::SetPassword(pwd) => {
                 self.password_value = pwd;
+            }
+            Message::ShowInfo(info) => {
+                self.node_info = Some(info);
+            }
+            Message::SelectNodeOption(node_selected, name) => {
+                let position_option = self
+                    .node_screens
+                    .clone()
+                    .into_iter()
+                    .position(|ns| *ns.node_connection_data.name == name);
+
+                if let Some(position) = position_option {
+                    match node_selected {
+                        NodeOptions::Info => {
+                            self.show_option = Some(NodeOptions::Info);
+                            self.node_screens[position].set_selected_option(node_selected);
+                            let node_info_task =
+                                get_info(self.node_screens[position].node_connection_data.clone());
+
+                            return Command::perform(node_info_task, |m| m);
+                        }
+                        _ => (),
+                    }
+                }
             }
             Message::SetPhrase(phase) => {
                 self.phrase_value = phase;
@@ -133,7 +167,7 @@ impl ConnectNode {
                 .padding(20)
                 .push::<Element<Message>>(
                     Column::new()
-                        .width(Length::FillPortion(1))
+                        .width(Length::Units(200))
                         .align_items(Align::Center)
                         .push::<Column<Message>>(
                             self.node_screens
@@ -142,6 +176,7 @@ impl ConnectNode {
                         )
                         .push::<Element<Message>>(
                             Button::new(&mut self.add_node, Text::new("Add Node"))
+                                .style(ButtonStyles::Confirm)
                                 .on_press(Message::ShowConnectConfig)
                                 .into(),
                         )
@@ -149,7 +184,7 @@ impl ConnectNode {
                 )
                 .push::<Column<Message>>(if self.show_connect_config {
                     Column::new()
-                        .width(Length::FillPortion(3))
+                        .width(Length::Fill)
                         .align_items(Align::End)
                         .push::<Column<Message>>(
                             Column::new()
@@ -248,6 +283,48 @@ impl ConnectNode {
                                     Row::new()
                                 }),
                         )
+                } else if let Some(option) = self.show_option.clone() {
+                    if let Some(node_info) = self.node_info.clone() {
+                        match option {
+                            NodeOptions::Info => Column::new()
+                                .padding(20)
+                                .push(
+                                    Row::new()
+                                        .padding(20)
+                                        .spacing(10)
+                                        .push(
+                                            Column::new()
+                                                .width(Length::FillPortion(2))
+                                                .push(Text::new("Node version: ")),
+                                        )
+                                        .push(Column::new().width(Length::FillPortion(2)).push(
+                                            Text::new(&format!(
+                                                "{} v",
+                                                node_info.clone().walletversion
+                                            )),
+                                        )),
+                                )
+                                .push(
+                                    Row::new()
+                                        .padding(20)
+                                        .spacing(10)
+                                        .push(
+                                            Column::new()
+                                                .width(Length::FillPortion(2))
+                                                .push(Text::new("Balance: ")),
+                                        )
+                                        .push(Column::new().width(Length::FillPortion(2)).push(
+                                            Text::new(&format!(
+                                                "{} $OK",
+                                                node_info.clone().balance
+                                            )),
+                                        )),
+                                ),
+                            _ => Column::new().width(Length::FillPortion(3)),
+                        }
+                    } else {
+                        Column::new().width(Length::FillPortion(3))
+                    }
                 } else {
                     Column::new().width(Length::FillPortion(3))
                 }),
@@ -263,6 +340,14 @@ async fn add_connection(
     password: String,
     phrase_value: String,
 ) -> Message {
+    let rq_client = RqClient::new(address.clone(), username.clone(), password.clone());
+
+    let response_connection = rq_client.get_wallet_info().await;
+
+    if let Err(connection_error) = response_connection {
+        return Message::SetConnectionError(connection_error.to_string());
+    }
+
     let connection_db = ConnectionDB::new().await;
 
     let mut connections = connection_db.get_connections();
@@ -290,6 +375,22 @@ async fn add_connection(
         Message::SetConnectionError(response.to_string())
     } else {
         Message::GetConnections(connections)
+    }
+}
+
+async fn get_info(node: ConnectNodeModel) -> Message {
+    let rq_client = RqClient::new(
+        node.address.clone(),
+        node.username.clone(),
+        node.password.clone(),
+    );
+
+    let info_result = rq_client.get_wallet_info().await;
+
+    if let Ok(info) = info_result {
+        Message::ShowInfo(info.result)
+    } else {
+        Message::SetConnectionError("Error to get node info".to_string())
     }
 }
 

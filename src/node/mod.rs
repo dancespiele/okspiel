@@ -1,3 +1,3 @@
 mod node_screen;
 
-pub use node_screen::NodeScreen;
+pub use node_screen::{NodeOptions, NodeScreen};

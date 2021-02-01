@@ -6,6 +6,7 @@ mod connect;
 mod db;
 mod node;
 mod ok_client;
+mod styles;
 
 use crate::connect::{ConnectMsg, ConnectNode};
 use db::ConnectionDB;
