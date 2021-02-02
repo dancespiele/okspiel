@@ -27,7 +27,6 @@ pub struct ConnectNode {
     show_connecion_error: (bool, String),
     show_disconnect_error: (bool, String),
     node_info: Option<Info>,
-    connection_selected: Option<NodeScreen>,
     show_option: Option<NodeOptions>,
 }
 
@@ -68,7 +67,6 @@ impl ConnectNode {
             show_connecion_error: (false, String::from("")),
             show_disconnect_error: (false, String::from("")),
             node_info: None,
-            connection_selected: None,
             show_option: None,
         }
     }
@@ -76,6 +74,10 @@ impl ConnectNode {
     pub fn update(&mut self, message: Message) -> Command<Message> {
         match message {
             Message::ShowConnectConfig => {
+                if !self.show_connect_config {
+                    self.remove_selected();
+                }
+
                 self.show_connect_config = !self.show_connect_config;
             }
             Message::SetName(name) => {
@@ -94,23 +96,18 @@ impl ConnectNode {
                 self.node_info = Some(info);
             }
             Message::SelectNodeOption(node_selected, name) => {
-                let position_option = self
-                    .node_screens
-                    .clone()
-                    .into_iter()
-                    .position(|ns| *ns.node_connection_data.name == name);
+                let position_option = self.get_position(name);
+                self.remove_messages();
+                self.remove_selected();
 
                 if let Some(position) = position_option {
-                    match node_selected {
-                        NodeOptions::Info => {
-                            self.show_option = Some(NodeOptions::Info);
-                            self.node_screens[position].set_selected_option(node_selected);
-                            let node_info_task =
-                                get_info(self.node_screens[position].node_connection_data.clone());
+                    if node_selected == NodeOptions::Info {
+                        self.show_option = Some(NodeOptions::Info);
+                        self.node_screens[position].set_selected_option(node_selected);
+                        let node_info_task =
+                            get_info(self.node_screens[position].node_connection_data.clone());
 
-                            return Command::perform(node_info_task, |m| m);
-                        }
-                        _ => (),
+                        return Command::perform(node_info_task, |m| m);
                     }
                 }
             }
@@ -158,6 +155,27 @@ impl ConnectNode {
         }
 
         Command::none()
+    }
+
+    fn remove_messages(&mut self) {
+        self.show_connecion_error = (false, "".to_string());
+        self.show_disconnect_error = (false, "".to_string());
+        self.show_connect_config = false;
+    }
+
+    fn remove_selected(&mut self) {
+        self.show_option = None;
+        for (i, _) in self.node_screens.clone().into_iter().enumerate() {
+            let node_name = self.node_screens[i].node_connection_data.name.clone();
+            self.node_screens[i].set_selected_option(NodeOptions::NodeName(node_name))
+        }
+    }
+
+    fn get_position(&self, name: String) -> Option<usize> {
+        self.node_screens
+            .clone()
+            .into_iter()
+            .position(|ns| *ns.node_connection_data.name == name)
     }
 
     pub fn view(&mut self) -> Element<Message> {
