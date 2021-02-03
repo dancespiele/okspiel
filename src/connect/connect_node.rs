@@ -360,7 +360,7 @@ async fn add_connection(
 ) -> Message {
     let rq_client = RqClient::new(address.clone(), username.clone(), password.clone());
 
-    let response_connection = rq_client.get_wallet_info().await;
+    let response_connection = rq_client.get_wallet_info::<Info>().await;
 
     if let Err(connection_error) = response_connection {
         return Message::SetConnectionError(connection_error.to_string());

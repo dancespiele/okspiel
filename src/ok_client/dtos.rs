@@ -18,8 +18,8 @@ pub struct Info {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct WalletInfo {
-    pub result: Info,
+pub struct NodeResponse<S> {
+    pub result: S,
 }
 
 impl From<(String, Option<Value>, Value)> for Request {

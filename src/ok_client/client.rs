@@ -1,6 +1,6 @@
-use super::dtos::{Request, WalletInfo};
+use super::dtos::{Request, NodeResponse, Info};
 use reqwest::{Client, Error, RequestBuilder, Response};
-use serde_json::{json, to_value};
+use serde_json::{json, to_value, Value};
 use std::sync::{Arc, Mutex};
 
 pub struct RqClient {
@@ -31,7 +31,7 @@ impl RqClient {
         request_builder.basic_auth(self.username.clone(), Some(self.pwd.clone()))
     }
 
-    pub async fn get_wallet_info(&self) -> Result<WalletInfo, Error> {
+    pub async fn get_wallet_info(&self) -> Result<NodeResponse<Info>, Error> {
         let rq = self.get_request_builder();
 
         rq.json(&Request::from((
@@ -41,7 +41,21 @@ impl RqClient {
         )))
         .send()
         .await?
-        .json::<WalletInfo>()
+        .json::<NodeResponse<Info>>()
+        .await
+    }
+
+    pub async fn get_addresses(&self) -> Result<NodeResponse<Vec<String>>, Error> {
+        let rq = self.get_request_builder();
+
+        rq.json(&Request::from((
+            String::from("getaddressesbyaccount"),
+            Some(json!("default")),
+            json!(*self.nonce),
+        )))
+        .send()
+        .await?
+        .json::<NodeResponse<Vec<String>>>()
         .await
     }
 }
