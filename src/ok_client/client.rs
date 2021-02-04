@@ -1,6 +1,6 @@
-use super::dtos::{Request, NodeResponse, Info};
-use reqwest::{Client, Error, RequestBuilder, Response};
-use serde_json::{json, to_value, Value};
+use super::dtos::{Info, NodeResponse, Request};
+use reqwest::{Client, Error, RequestBuilder};
+use serde_json::json;
 use std::sync::{Arc, Mutex};
 
 pub struct RqClient {
@@ -50,7 +50,7 @@ impl RqClient {
 
         rq.json(&Request::from((
             String::from("getaddressesbyaccount"),
-            Some(json!("default")),
+            Some(json!(vec!("default"))),
             json!(*self.nonce),
         )))
         .send()
@@ -71,4 +71,17 @@ async fn should_get_wallet_info() {
     let wallet_info = rq_client.get_wallet_info().await.unwrap();
 
     println!("wallet info: {:?}", wallet_info);
+}
+
+#[tokio::test]
+async fn should_get_addresses() {
+    let rq_client = RqClient::new(
+        String::from("http://127.0.0.1:6969/"),
+        String::from("prueba"),
+        String::from("test"),
+    );
+
+    let addresses = rq_client.get_addresses().await.unwrap();
+
+    println!("addresses: {:?}", addresses);
 }

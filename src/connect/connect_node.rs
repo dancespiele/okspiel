@@ -4,8 +4,8 @@ use crate::node::{NodeOptions, NodeScreen};
 use crate::ok_client::{Info, RqClient};
 use crate::styles::ButtonStyles;
 use iced::{
-    button, text_input, Align, Button, Column, Command, Container, Element, Length, Row, Text,
-    TextInput,
+    button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
+    Row, Scrollable, Text, TextInput,
 };
 
 pub struct ConnectNode {
@@ -27,7 +27,9 @@ pub struct ConnectNode {
     show_connecion_error: (bool, String),
     show_disconnect_error: (bool, String),
     node_info: Option<Info>,
+    addresses: Option<Vec<String>>,
     show_option: Option<NodeOptions>,
+    scroll: scrollable::State,
 }
 
 #[derive(Debug, Clone)]
@@ -44,6 +46,7 @@ pub enum Message {
     Disconnect(String),
     SelectNodeOption(NodeOptions, String),
     ShowInfo(Info),
+    ShowAddresses(Vec<String>),
 }
 
 impl ConnectNode {
@@ -68,6 +71,8 @@ impl ConnectNode {
             show_disconnect_error: (false, String::from("")),
             node_info: None,
             show_option: None,
+            addresses: None,
+            scroll: scrollable::State::new(),
         }
     }
 
@@ -95,19 +100,34 @@ impl ConnectNode {
             Message::ShowInfo(info) => {
                 self.node_info = Some(info);
             }
+            Message::ShowAddresses(addresses) => {
+                self.addresses = Some(addresses);
+            }
             Message::SelectNodeOption(node_selected, name) => {
                 let position_option = self.get_position(name);
                 self.remove_messages();
                 self.remove_selected();
 
                 if let Some(position) = position_option {
-                    if node_selected == NodeOptions::Info {
-                        self.show_option = Some(NodeOptions::Info);
-                        self.node_screens[position].set_selected_option(node_selected);
-                        let node_info_task =
-                            get_info(self.node_screens[position].node_connection_data.clone());
+                    match node_selected {
+                        NodeOptions::Info => {
+                            self.show_option = Some(NodeOptions::Info);
+                            self.node_screens[position].set_selected_option(node_selected);
+                            let node_info_task =
+                                get_info(self.node_screens[position].node_connection_data.clone());
 
-                        return Command::perform(node_info_task, |m| m);
+                            return Command::perform(node_info_task, |m| m);
+                        }
+                        NodeOptions::Receive => {
+                            self.show_option = Some(NodeOptions::Receive);
+                            self.node_screens[position].set_selected_option(node_selected);
+                            let receive_task = list_addresses(
+                                self.node_screens[position].node_connection_data.clone(),
+                            );
+
+                            return Command::perform(receive_task, |m| m);
+                        }
+                        _ => (),
                     }
                 }
             }
@@ -302,46 +322,65 @@ impl ConnectNode {
                                 }),
                         )
                 } else if let Some(option) = self.show_option.clone() {
-                    if let Some(node_info) = self.node_info.clone() {
-                        match option {
-                            NodeOptions::Info => Column::new()
-                                .padding(20)
-                                .push(
-                                    Row::new()
-                                        .padding(20)
-                                        .spacing(10)
-                                        .push(
-                                            Column::new()
-                                                .width(Length::FillPortion(2))
-                                                .push(Text::new("Node version: ")),
-                                        )
-                                        .push(Column::new().width(Length::FillPortion(2)).push(
-                                            Text::new(&format!(
-                                                "{} v",
-                                                node_info.clone().walletversion
-                                            )),
-                                        )),
-                                )
-                                .push(
-                                    Row::new()
-                                        .padding(20)
-                                        .spacing(10)
-                                        .push(
-                                            Column::new()
-                                                .width(Length::FillPortion(2))
-                                                .push(Text::new("Balance: ")),
-                                        )
-                                        .push(Column::new().width(Length::FillPortion(2)).push(
-                                            Text::new(&format!(
-                                                "{} $OK",
-                                                node_info.clone().balance
-                                            )),
-                                        )),
-                                ),
-                            _ => Column::new().width(Length::FillPortion(3)),
+                    match option {
+                        NodeOptions::Info => {
+                            if let Some(node_info) = self.node_info.clone() {
+                                Column::new()
+                                    .padding(20)
+                                    .push(
+                                        Row::new()
+                                            .padding(20)
+                                            .spacing(10)
+                                            .push(
+                                                Column::new()
+                                                    .width(Length::FillPortion(2))
+                                                    .push(Text::new("Node version: ")),
+                                            )
+                                            .push(
+                                                Column::new().width(Length::FillPortion(2)).push(
+                                                    Text::new(&format!(
+                                                        "{} v",
+                                                        node_info.walletversion
+                                                    )),
+                                                ),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .padding(20)
+                                            .spacing(10)
+                                            .push(
+                                                Column::new()
+                                                    .width(Length::FillPortion(2))
+                                                    .push(Text::new("Balance: ")),
+                                            )
+                                            .push(
+                                                Column::new().width(Length::FillPortion(2)).push(
+                                                    Text::new(&format!(
+                                                        "{} $OK",
+                                                        node_info.balance
+                                                    )),
+                                                ),
+                                            ),
+                                    )
+                            } else {
+                                Column::new().width(Length::FillPortion(3))
+                            }
                         }
-                    } else {
-                        Column::new().width(Length::FillPortion(3))
+                        NodeOptions::Receive => {
+                            Column::new()
+                                .padding(20)
+                                .push(Scrollable::new(&mut self.scroll).push(
+                                    if let Some(mut addresses) = self.addresses.clone() {
+                                        addresses.iter_mut().fold(Row::new().padding(20), |r, a| {
+                                            r.push(Text::new(a.clone()))
+                                        })
+                                    } else {
+                                        Row::new()
+                                    },
+                                ))
+                        }
+                        _ => Column::new().width(Length::FillPortion(3)),
                     }
                 } else {
                     Column::new().width(Length::FillPortion(3))
@@ -437,5 +476,21 @@ async fn delete_connection(name: String) -> Message {
         Message::SetConnectionError(response.to_string())
     } else {
         Message::GetConnections(connections_filtered)
+    }
+}
+
+async fn list_addresses(node: ConnectNodeModel) -> Message {
+    let rq_client = RqClient::new(
+        node.address.clone(),
+        node.username.clone(),
+        node.password.clone(),
+    );
+
+    let addresses_result = rq_client.get_addresses().await;
+
+    if let Ok(addresses) = addresses_result {
+        Message::ShowAddresses(addresses.result)
+    } else {
+        Message::SetConnectionError("Error to get node info".to_string())
     }
 }

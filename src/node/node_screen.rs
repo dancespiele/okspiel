@@ -1,6 +1,6 @@
 use crate::connect::{ConnectMsg, ConnectNodeModel};
 use crate::styles::ButtonStyles;
-use iced::{button, pick_list, Button, Container, Element, Length, PickList, Row, Text};
+use iced::{button, pick_list, Button, Container, Element, PickList, Row, Text};
 
 #[derive(Debug, Clone)]
 pub struct NodeScreen {
@@ -43,7 +43,7 @@ impl NodeScreen {
             pick_options: pick_list::State::default(),
             node_connection_data: connect_node_model.clone(),
             delete_connection: button::State::new(),
-            selected_option: NodeOptions::NodeName(connect_node_model.name.clone()),
+            selected_option: NodeOptions::NodeName(connect_node_model.name),
         }
     }
 
