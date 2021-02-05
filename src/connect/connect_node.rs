@@ -3,6 +3,7 @@ use crate::db::ConnectionDB;
 use crate::node::{NodeOptions, NodeScreen};
 use crate::ok_client::{Info, RqClient};
 use crate::styles::ButtonStyles;
+use copypasta::{ClipboardContext, ClipboardProvider};
 use iced::{
     button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
     Row, Scrollable, Text, TextInput,
@@ -30,6 +31,8 @@ pub struct ConnectNode {
     addresses: Option<Vec<String>>,
     show_option: Option<NodeOptions>,
     scroll: scrollable::State,
+    clipboard: ClipboardContext,
+    copy: button::State,
 }
 
 #[derive(Debug, Clone)]
@@ -47,6 +50,7 @@ pub enum Message {
     SelectNodeOption(NodeOptions, String),
     ShowInfo(Info),
     ShowAddresses(Vec<String>),
+    CopyToClipboard(String),
 }
 
 impl ConnectNode {
@@ -73,6 +77,8 @@ impl ConnectNode {
             show_option: None,
             addresses: None,
             scroll: scrollable::State::new(),
+            clipboard: ClipboardContext::new().unwrap(),
+            copy: button::State::new(),
         }
     }
 
@@ -172,6 +178,7 @@ impl ConnectNode {
 
                 return Command::perform(delete_connection_task, |m| m);
             }
+            Message::CopyToClipboard(address) => self.clipboard.set_contents(address).unwrap(),
         }
 
         Command::none()
@@ -373,7 +380,12 @@ impl ConnectNode {
                                 .push(Scrollable::new(&mut self.scroll).push(
                                     if let Some(mut addresses) = self.addresses.clone() {
                                         addresses.iter_mut().fold(Row::new().padding(20), |r, a| {
-                                            r.push(Text::new(a.clone()))
+                                            r.push(Text::new(a.clone())).push(
+                                                Button::new(&mut self.copy, Text::new("Copy"))
+                                                    .on_press(Message::CopyToClipboard(
+                                                        a.to_string(),
+                                                    )),
+                                            )
                                         })
                                     } else {
                                         Row::new()
