@@ -32,7 +32,7 @@ pub struct ConnectNode {
     show_option: Option<NodeOptions>,
     scroll: scrollable::State,
     clipboard: ClipboardContext,
-    copy: button::State,
+    copy_states: Vec<button::State>,
 }
 
 #[derive(Debug, Clone)]
@@ -78,7 +78,7 @@ impl ConnectNode {
             addresses: None,
             scroll: scrollable::State::new(),
             clipboard: ClipboardContext::new().unwrap(),
-            copy: button::State::new(),
+            copy_states: vec![],
         }
     }
 
@@ -108,6 +108,12 @@ impl ConnectNode {
             }
             Message::ShowAddresses(addresses) => {
                 self.addresses = Some(addresses);
+
+                if let Some(addresses_copy) = self.addresses {
+                    for (i, _) in addresses_copy.into_iter().enumerate() {
+                        self.copy_states[i] = button::State::new();
+                    }
+                }
             }
             Message::SelectNodeOption(node_selected, name) => {
                 let position_option = self.get_position(name);
@@ -379,14 +385,21 @@ impl ConnectNode {
                                 .padding(20)
                                 .push(Scrollable::new(&mut self.scroll).push(
                                     if let Some(mut addresses) = self.addresses.clone() {
-                                        addresses.iter_mut().fold(Row::new().padding(20), |r, a| {
-                                            r.push(Text::new(a.clone())).push(
-                                                Button::new(&mut self.copy, Text::new("Copy"))
+                                        addresses.iter_mut().enumerate().fold(
+                                            Row::new().padding(20),
+                                            |r, address| {
+                                                let (i, a) = address;
+                                                r.push(Text::new(a.clone())).push(
+                                                    Button::new(
+                                                        &mut self.copy_states[i],
+                                                        Text::new("Copy"),
+                                                    )
                                                     .on_press(Message::CopyToClipboard(
                                                         a.to_string(),
                                                     )),
-                                            )
-                                        })
+                                                )
+                                            },
+                                        )
                                     } else {
                                         Row::new()
                                     },
