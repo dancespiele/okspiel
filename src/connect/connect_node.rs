@@ -1,12 +1,11 @@
 use super::ConnectNodeModel;
 use crate::db::ConnectionDB;
-use crate::node::{NodeOptions, NodeScreen};
+use crate::node::{NodeOptions, NodeScreen, ReceiveMessage, ReceiveScreen};
 use crate::ok_client::{Info, RqClient};
 use crate::styles::ButtonStyles;
-use copypasta::{ClipboardContext, ClipboardProvider};
 use iced::{
     button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
-    Row, Scrollable, Text, TextInput,
+    Row, Text, TextInput,
 };
 
 pub struct ConnectNode {
@@ -28,11 +27,9 @@ pub struct ConnectNode {
     show_connecion_error: (bool, String),
     show_disconnect_error: (bool, String),
     node_info: Option<Info>,
-    addresses: Option<Vec<String>>,
+    receive_screen: ReceiveScreen,
     show_option: Option<NodeOptions>,
     scroll: scrollable::State,
-    clipboard: ClipboardContext,
-    copy_states: Vec<button::State>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,7 +47,7 @@ pub enum Message {
     SelectNodeOption(NodeOptions, String),
     ShowInfo(Info),
     ShowAddresses(Vec<String>),
-    CopyToClipboard(String),
+    ReceiveMsg(ReceiveMessage),
 }
 
 impl ConnectNode {
@@ -75,10 +72,8 @@ impl ConnectNode {
             show_disconnect_error: (false, String::from("")),
             node_info: None,
             show_option: None,
-            addresses: None,
+            receive_screen: ReceiveScreen::new(),
             scroll: scrollable::State::new(),
-            clipboard: ClipboardContext::new().unwrap(),
-            copy_states: vec![],
         }
     }
 
@@ -107,13 +102,7 @@ impl ConnectNode {
                 self.node_info = Some(info);
             }
             Message::ShowAddresses(addresses) => {
-                self.addresses = Some(addresses);
-
-                if let Some(addresses_copy) = self.addresses {
-                    for (i, _) in addresses_copy.into_iter().enumerate() {
-                        self.copy_states[i] = button::State::new();
-                    }
-                }
+                self.receive_screen.set_address(addresses);
             }
             Message::SelectNodeOption(node_selected, name) => {
                 let position_option = self.get_position(name);
@@ -184,7 +173,7 @@ impl ConnectNode {
 
                 return Command::perform(delete_connection_task, |m| m);
             }
-            Message::CopyToClipboard(address) => self.clipboard.set_contents(address).unwrap(),
+            Message::ReceiveMsg(receive_message) => self.receive_screen.update(receive_message),
         }
 
         Command::none()
@@ -380,31 +369,9 @@ impl ConnectNode {
                                 Column::new().width(Length::FillPortion(3))
                             }
                         }
-                        NodeOptions::Receive => {
-                            Column::new()
-                                .padding(20)
-                                .push(Scrollable::new(&mut self.scroll).push(
-                                    if let Some(mut addresses) = self.addresses.clone() {
-                                        addresses.iter_mut().enumerate().fold(
-                                            Row::new().padding(20),
-                                            |r, address| {
-                                                let (i, a) = address;
-                                                r.push(Text::new(a.clone())).push(
-                                                    Button::new(
-                                                        &mut self.copy_states[i],
-                                                        Text::new("Copy"),
-                                                    )
-                                                    .on_press(Message::CopyToClipboard(
-                                                        a.to_string(),
-                                                    )),
-                                                )
-                                            },
-                                        )
-                                    } else {
-                                        Row::new()
-                                    },
-                                ))
-                        }
+                        NodeOptions::Receive => Column::new().padding(20).push::<Element<Message>>(
+                            self.receive_screen.view().map(Message::ReceiveMsg),
+                        ),
                         _ => Column::new().width(Length::FillPortion(3)),
                     }
                 } else {

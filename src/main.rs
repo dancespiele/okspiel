@@ -21,7 +21,7 @@ pub enum Message {
     ConnectMessage(ConnectMsg),
 }
 
-impl Application for OkspielMainView {
+impl<'a> Application for OkspielMainView {
     type Executor = executor::Default;
     type Message = Message;
     type Flags = ();
