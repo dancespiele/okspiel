@@ -13,6 +13,8 @@ pub struct ConnectNode {
     pub name_value: String,
     address: text_input::State,
     pub address_value: String,
+    account: text_input::State,
+    pub account_value: String,
     username: text_input::State,
     pub username_value: String,
     password: text_input::State,
@@ -36,6 +38,7 @@ pub struct ConnectNode {
 pub enum Message {
     SetName(String),
     SetAddress(String),
+    SetAccount(String),
     SetUsername(String),
     SetPassword(String),
     SetPhrase(String),
@@ -57,6 +60,8 @@ impl ConnectNode {
             name_value: String::from(""),
             address: text_input::State::new(),
             address_value: String::from(""),
+            account: text_input::State::new(),
+            account_value: String::from(""),
             username: text_input::State::new(),
             username_value: String::from(""),
             password: text_input::State::new(),
@@ -91,6 +96,9 @@ impl ConnectNode {
             }
             Message::SetAddress(addr) => {
                 self.address_value = addr;
+            }
+            Message::SetAccount(account) => {
+                self.account_value = account;
             }
             Message::SetUsername(username) => {
                 self.username_value = username;
@@ -142,6 +150,7 @@ impl ConnectNode {
                 self.connections_node_model = connections.to_vec();
                 self.name_value = String::from("");
                 self.address_value = String::from("");
+                self.account_value = String::from("");
                 self.username_value = String::from("");
                 self.password_value = String::from("");
                 self.phrase_value = String::from("");
@@ -160,6 +169,7 @@ impl ConnectNode {
                 let add_connection_task = add_connection(
                     self.name_value.clone(),
                     self.address_value.clone(),
+                    self.account_value.clone(),
                     self.username_value.clone(),
                     self.password_value.clone(),
                     self.phrase_value.clone(),
@@ -257,6 +267,21 @@ impl ConnectNode {
                                                 "address node",
                                                 self.address_value.as_ref(),
                                                 Message::SetAddress,
+                                            )
+                                            .into(),
+                                        ),
+                                )
+                                .push(
+                                    Row::new()
+                                        .padding(20)
+                                        .spacing(10)
+                                        .push(Text::new("Account: "))
+                                        .push::<Element<Message>>(
+                                            TextInput::new(
+                                                &mut self.account,
+                                                "account",
+                                                self.account_value.as_ref(),
+                                                Message::SetAccount,
                                             )
                                             .into(),
                                         ),
@@ -385,11 +410,17 @@ impl ConnectNode {
 async fn add_connection(
     name: String,
     address: String,
+    account: String,
     username: String,
     password: String,
     phrase_value: String,
 ) -> Message {
-    let rq_client = RqClient::new(address.clone(), username.clone(), password.clone());
+    let rq_client = RqClient::new(
+        address.clone(),
+        account.clone(),
+        username.clone(),
+        password.clone(),
+    );
 
     let response_connection = rq_client.get_wallet_info().await;
 
@@ -404,6 +435,7 @@ async fn add_connection(
     connections.push(ConnectNodeModel::from((
         name,
         address,
+        account,
         username,
         password,
         phrase_value,
@@ -430,6 +462,7 @@ async fn add_connection(
 async fn get_info(node: ConnectNodeModel) -> Message {
     let rq_client = RqClient::new(
         node.address.clone(),
+        node.account.clone(),
         node.username.clone(),
         node.password.clone(),
     );
@@ -474,6 +507,7 @@ async fn delete_connection(name: String) -> Message {
 async fn list_addresses(node: ConnectNodeModel) -> Message {
     let rq_client = RqClient::new(
         node.address.clone(),
+        node.account.clone(),
         node.username.clone(),
         node.password.clone(),
     );

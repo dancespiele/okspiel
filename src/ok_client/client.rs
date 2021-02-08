@@ -1,10 +1,12 @@
 use super::dtos::{Info, NodeResponse, Request};
-use reqwest::{Client, Error, RequestBuilder};
-use serde_json::json;
+use core::f32;
+use reqwest::{Client, Error, RequestBuilder, Response};
+use serde_json::{json, value::Value};
 use std::sync::{Arc, Mutex};
 
 pub struct RqClient {
     pub url: String,
+    pub account: String,
     pub username: String,
     pub pwd: String,
     pub client: Client,
@@ -12,11 +14,12 @@ pub struct RqClient {
 }
 
 impl RqClient {
-    pub fn new(url: String, username: String, pwd: String) -> Self {
+    pub fn new(url: String, account: String, username: String, pwd: String) -> Self {
         let client = Client::new();
 
         Self {
             url,
+            account,
             username,
             pwd,
             client,
@@ -50,12 +53,32 @@ impl RqClient {
 
         rq.json(&Request::from((
             String::from("getaddressesbyaccount"),
-            Some(json!(vec!("default"))),
+            Some(json!(vec![Value::from(self.account.clone())])),
             json!(*self.nonce),
         )))
         .send()
         .await?
         .json::<NodeResponse<Vec<String>>>()
+        .await
+    }
+
+    pub async fn send_to_address(
+        &self,
+        to_address: String,
+        amount: f32,
+    ) -> Result<Response, Error> {
+        let rq = self.get_request_builder();
+
+        rq.json(&Request::from((
+            String::from("sendfrom"),
+            Some(json!(vec![
+                Value::from(self.account.clone()),
+                Value::from(to_address),
+                Value::from(amount)
+            ])),
+            json!(*self.nonce),
+        )))
+        .send()
         .await
     }
 }
@@ -64,6 +87,7 @@ impl RqClient {
 async fn should_get_wallet_info() {
     let rq_client = RqClient::new(
         String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
         String::from("prueba"),
         String::from("test"),
     );
@@ -77,6 +101,7 @@ async fn should_get_wallet_info() {
 async fn should_get_addresses() {
     let rq_client = RqClient::new(
         String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
         String::from("prueba"),
         String::from("test"),
     );
@@ -84,4 +109,24 @@ async fn should_get_addresses() {
     let addresses = rq_client.get_addresses().await.unwrap();
 
     println!("addresses: {:?}", addresses);
+}
+
+#[tokio::test]
+async fn should_send_amount() {
+    let rq_client = RqClient::new(
+        String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
+        String::from("prueba"),
+        String::from("test"),
+    );
+
+    let response = rq_client
+        .send_to_address("PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx".to_string(), 0.5)
+        .await;
+
+    if let Err(error) = response {
+        println!("error: {}", error.to_string());
+    } else {
+        println!("response: {:?}", response);
+    }
 }

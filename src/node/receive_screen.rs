@@ -22,6 +22,9 @@ impl ReceiveScreen {
     }
 
     pub fn set_address(&mut self, addresses: Vec<String>) {
+        if !self.addresses.is_empty() {
+            self.addresses = vec![];
+        }
         for address in addresses.into_iter() {
             let address = Address::new(address);
             self.addresses.push(address);
