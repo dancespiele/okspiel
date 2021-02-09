@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 tokio = { version = "1.1", features = ["full"] }
 iced = {git = "https://github.com/hecrj/iced.git", features = ["tokio", "glow", "glow_qr_code"], branch = "master"}
+iced_graphics= "0.1"
 sled = "0.34"
 serde = "1.0"
 serde_json = "1.0"

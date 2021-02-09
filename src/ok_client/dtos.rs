@@ -7,6 +7,12 @@ pub struct Request {
     pub id: Value,
 }
 
+#[derive(Debug, Deserialize, Clone)]
+pub struct ResponseError {
+    pub code: i32,
+    pub message: String,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Info {
     pub walletversion: f32,
@@ -20,6 +26,7 @@ pub struct Info {
 #[derive(Debug, Deserialize)]
 pub struct NodeResponse<S> {
     pub result: S,
+    pub error: Option<ResponseError>,
 }
 
 impl From<(String, Option<Value>, Value)> for Request {

@@ -1,6 +1,6 @@
 use super::dtos::{Info, NodeResponse, Request};
 use core::f32;
-use reqwest::{Client, Error, RequestBuilder, Response};
+use reqwest::{Client, Error, RequestBuilder};
 use serde_json::{json, value::Value};
 use std::sync::{Arc, Mutex};
 
@@ -9,12 +9,19 @@ pub struct RqClient {
     pub account: String,
     pub username: String,
     pub pwd: String,
+    pub phrase: String,
     pub client: Client,
     pub nonce: Arc<Mutex<u64>>,
 }
 
 impl RqClient {
-    pub fn new(url: String, account: String, username: String, pwd: String) -> Self {
+    pub fn new(
+        url: String,
+        account: String,
+        username: String,
+        pwd: String,
+        phrase: String,
+    ) -> Self {
         let client = Client::new();
 
         Self {
@@ -22,6 +29,7 @@ impl RqClient {
             account,
             username,
             pwd,
+            phrase,
             client,
             nonce: Arc::new(Mutex::new(0)),
         }
@@ -66,7 +74,7 @@ impl RqClient {
         &self,
         to_address: String,
         amount: f32,
-    ) -> Result<Response, Error> {
+    ) -> Result<NodeResponse<String>, Error> {
         let rq = self.get_request_builder();
 
         rq.json(&Request::from((
@@ -79,6 +87,44 @@ impl RqClient {
             json!(*self.nonce),
         )))
         .send()
+        .await?
+        .json::<NodeResponse<String>>()
+        .await
+    }
+
+    pub async fn unlock_wallet(
+        &self,
+        time: u32,
+        staking_mode: bool,
+    ) -> Result<NodeResponse<Option<String>>, Error> {
+        let rq = self.get_request_builder();
+
+        rq.json(&Request::from((
+            String::from("walletpassphrase"),
+            Some(json!(vec![
+                Value::from(self.phrase.clone()),
+                Value::from(time),
+                Value::from(staking_mode)
+            ])),
+            json!(*self.nonce),
+        )))
+        .send()
+        .await?
+        .json::<NodeResponse<Option<String>>>()
+        .await
+    }
+
+    pub async fn lock_wallet(&self) -> Result<NodeResponse<Option<String>>, Error> {
+        let rq = self.get_request_builder();
+
+        rq.json(&Request::from((
+            String::from("walletlock"),
+            None,
+            json!(*self.nonce),
+        )))
+        .send()
+        .await?
+        .json::<NodeResponse<Option<String>>>()
         .await
     }
 }
@@ -89,6 +135,7 @@ async fn should_get_wallet_info() {
         String::from("http://127.0.0.1:6969/"),
         String::from("default"),
         String::from("prueba"),
+        String::from("test"),
         String::from("test"),
     );
 
@@ -104,6 +151,7 @@ async fn should_get_addresses() {
         String::from("default"),
         String::from("prueba"),
         String::from("test"),
+        String::from("test"),
     );
 
     let addresses = rq_client.get_addresses().await.unwrap();
@@ -118,15 +166,42 @@ async fn should_send_amount() {
         String::from("default"),
         String::from("prueba"),
         String::from("test"),
+        String::from("test"),
     );
 
     let response = rq_client
-        .send_to_address("PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx".to_string(), 0.5)
+        .send_to_address("PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx".to_string(), 0.1)
         .await;
 
-    if let Err(error) = response {
-        println!("error: {}", error.to_string());
-    } else {
-        println!("response: {:?}", response);
-    }
+    println!("response: {:?}", response);
+}
+
+#[tokio::test]
+async fn should_unlock_wallet() {
+    let rq_client = RqClient::new(
+        String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
+        String::from("prueba"),
+        String::from("test"),
+        String::from("test"),
+    );
+
+    let response = rq_client.unlock_wallet(1000, false).await;
+
+    println!("response: {:?}", response);
+}
+
+#[tokio::test]
+async fn should_lock_wallet() {
+    let rq_client = RqClient::new(
+        String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
+        String::from("prueba"),
+        String::from("test"),
+        String::from("test"),
+    );
+
+    let response = rq_client.lock_wallet().await;
+
+    println!("response: {:?}", response);
 }

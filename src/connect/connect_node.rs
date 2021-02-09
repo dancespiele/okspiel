@@ -1,7 +1,7 @@
 use super::ConnectNodeModel;
 use crate::db::ConnectionDB;
 use crate::node::{NodeOptions, NodeScreen, ReceiveMessage, ReceiveScreen};
-use crate::ok_client::{Info, RqClient};
+use crate::ok_client::{Info, NodeResponse, RqClient};
 use crate::styles::ButtonStyles;
 use iced::{
     button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
@@ -51,6 +51,8 @@ pub enum Message {
     ShowInfo(Info),
     ShowAddresses(Vec<String>),
     ReceiveMsg(ReceiveMessage),
+    Lock,
+    Unlock,
 }
 
 impl ConnectNode {
@@ -184,6 +186,8 @@ impl ConnectNode {
                 return Command::perform(delete_connection_task, |m| m);
             }
             Message::ReceiveMsg(receive_message) => self.receive_screen.update(receive_message),
+            Message::Lock => {}
+            Message::Unlock => {}
         }
 
         Command::none()
@@ -413,13 +417,14 @@ async fn add_connection(
     account: String,
     username: String,
     password: String,
-    phrase_value: String,
+    phrase: String,
 ) -> Message {
     let rq_client = RqClient::new(
         address.clone(),
         account.clone(),
         username.clone(),
         password.clone(),
+        phrase.clone(),
     );
 
     let response_connection = rq_client.get_wallet_info().await;
@@ -428,17 +433,16 @@ async fn add_connection(
         return Message::SetConnectionError(connection_error.to_string());
     }
 
+    if let Some(err_msg) = response_connection.unwrap().error {
+        return Message::SetConnectionError(err_msg.message);
+    }
+
     let connection_db = ConnectionDB::new().await;
 
     let mut connections = connection_db.get_connections();
 
     connections.push(ConnectNodeModel::from((
-        name,
-        address,
-        account,
-        username,
-        password,
-        phrase_value,
+        name, address, account, username, password, phrase,
     )));
 
     let connection_db_string_result = serde_json::to_string(&connections);
@@ -465,11 +469,15 @@ async fn get_info(node: ConnectNodeModel) -> Message {
         node.account.clone(),
         node.username.clone(),
         node.password.clone(),
+        node.phrase.clone(),
     );
 
     let info_result = rq_client.get_wallet_info().await;
 
     if let Ok(info) = info_result {
+        if let Some(err_msg) = info.error {
+            return Message::SetConnectionError(err_msg.message);
+        }
         Message::ShowInfo(info.result)
     } else {
         Message::SetConnectionError("Error to get node info".to_string())
@@ -510,11 +518,15 @@ async fn list_addresses(node: ConnectNodeModel) -> Message {
         node.account.clone(),
         node.username.clone(),
         node.password.clone(),
+        node.phrase.clone(),
     );
 
     let addresses_result = rq_client.get_addresses().await;
 
     if let Ok(addresses) = addresses_result {
+        if let Some(err_msg) = addresses.error {
+            return Message::SetConnectionError(err_msg.message);
+        }
         Message::ShowAddresses(addresses.result)
     } else {
         Message::SetConnectionError("Error to get node info".to_string())

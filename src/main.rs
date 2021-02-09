@@ -4,6 +4,7 @@ extern crate serde_json;
 
 mod connect;
 mod db;
+mod modules;
 mod node;
 mod ok_client;
 mod styles;

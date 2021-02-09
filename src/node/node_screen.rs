@@ -1,13 +1,15 @@
 use crate::connect::{ConnectMsg, ConnectNodeModel};
 use crate::styles::ButtonStyles;
-use iced::{button, pick_list, Button, Container, Element, PickList, Row, Text};
+use iced::{button, pick_list, Button, Container, Element, PickList, Row, Svg, Text};
 
 #[derive(Debug, Clone)]
 pub struct NodeScreen {
     pub node_connection_data: ConnectNodeModel,
     delete_connection: button::State,
+    button_lock_state: button::State,
     pick_options: pick_list::State<NodeOptions>,
     selected_option: NodeOptions,
+    is_locked: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,7 +45,9 @@ impl NodeScreen {
             pick_options: pick_list::State::default(),
             node_connection_data: connect_node_model.clone(),
             delete_connection: button::State::new(),
+            button_lock_state: button::State::new(),
             selected_option: NodeOptions::NodeName(connect_node_model.name),
+            is_locked: true,
         }
     }
 
@@ -73,6 +77,23 @@ impl NodeScreen {
                             self.node_connection_data.name.clone(),
                         ))
                         .into(),
+                )
+                .push::<Element<ConnectMsg>>(
+                    Button::new(
+                        &mut self.button_lock_state,
+                        Svg::from_path(if self.is_locked {
+                            "/assets/lock.svg"
+                        } else {
+                            "/assets/inlo.svg"
+                        })
+                        .into(),
+                    )
+                    .on_press(if self.is_locked {
+                        ConnectMsg::Unlock
+                    } else {
+                        ConnectMsg::Lock
+                    })
+                    .into(),
                 ),
         )
         .into()

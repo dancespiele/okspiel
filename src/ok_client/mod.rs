@@ -2,4 +2,4 @@ mod client;
 mod dtos;
 
 pub use client::RqClient;
-pub use dtos::Info;
+pub use dtos::{Info, NodeResponse};
