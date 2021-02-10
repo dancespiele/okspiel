@@ -4,12 +4,13 @@ extern crate serde_json;
 
 mod connect;
 mod db;
-mod modules;
 mod node;
 mod ok_client;
 mod styles;
+mod utils;
 
 use crate::connect::{ConnectMsg, ConnectNode};
+use crate::utils::get_connections_dto;
 use db::ConnectionDB;
 use iced::{executor, Application, Command, Element, Settings};
 
@@ -58,7 +59,11 @@ impl<'a> Application for OkspielMainView {
 async fn get_connections() -> ConnectMsg {
     let connection_db = ConnectionDB::new().await;
 
-    ConnectMsg::GetConnections(connection_db.get_connections())
+    let connections = connection_db.get_connections();
+
+    let connections_and_locked = get_connections_dto(connections).await;
+
+    ConnectMsg::GetConnections(connections_and_locked)
 }
 
 fn main() -> iced::Result {

@@ -1,10 +1,10 @@
-use crate::connect::{ConnectMsg, ConnectNodeModel};
+use crate::connect::{ConnectMsg, ConnectNodeDto};
 use crate::styles::ButtonStyles;
-use iced::{button, pick_list, Button, Container, Element, PickList, Row, Svg, Text};
+use iced::{button, pick_list, Button, Container, Element, PickList, Row, Text};
 
 #[derive(Debug, Clone)]
 pub struct NodeScreen {
-    pub node_connection_data: ConnectNodeModel,
+    pub node_connection_data: ConnectNodeDto,
     delete_connection: button::State,
     button_lock_state: button::State,
     pick_options: pick_list::State<NodeOptions>,
@@ -40,13 +40,13 @@ impl std::fmt::Display for NodeOptions {
 }
 
 impl NodeScreen {
-    pub fn new(connect_node_model: ConnectNodeModel) -> Self {
+    pub fn new(connect_node_dto: ConnectNodeDto) -> Self {
         Self {
             pick_options: pick_list::State::default(),
-            node_connection_data: connect_node_model.clone(),
+            node_connection_data: connect_node_dto.clone(),
             delete_connection: button::State::new(),
             button_lock_state: button::State::new(),
-            selected_option: NodeOptions::NodeName(connect_node_model.name),
+            selected_option: NodeOptions::NodeName(connect_node_dto.name),
             is_locked: true,
         }
     }
@@ -81,15 +81,14 @@ impl NodeScreen {
                 .push::<Element<ConnectMsg>>(
                     Button::new(
                         &mut self.button_lock_state,
-                        Svg::from_path(if self.is_locked {
-                            "/assets/lock.svg"
+                        if self.is_locked {
+                            Text::new("Unlock")
                         } else {
-                            "/assets/inlo.svg"
-                        })
-                        .into(),
+                            Text::new("Lock")
+                        },
                     )
                     .on_press(if self.is_locked {
-                        ConnectMsg::Unlock
+                        ConnectMsg::ShowUnlock
                     } else {
                         ConnectMsg::Lock
                     })

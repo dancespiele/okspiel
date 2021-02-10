@@ -1,8 +1,9 @@
-use super::ConnectNodeModel;
-use crate::db::ConnectionDB;
+use super::{ConnectNodeDto, ConnectNodeModel, NodeLock};
 use crate::node::{NodeOptions, NodeScreen, ReceiveMessage, ReceiveScreen};
-use crate::ok_client::{Info, NodeResponse, RqClient};
+use crate::ok_client::{Info, RqClient};
 use crate::styles::ButtonStyles;
+use crate::utils::get_connections_dto;
+use crate::{db::ConnectionDB, node};
 use iced::{
     button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
     Row, Text, TextInput,
@@ -22,7 +23,7 @@ pub struct ConnectNode {
     phrase: text_input::State,
     pub phrase_value: String,
     connect: button::State,
-    connections_node_model: Vec<ConnectNodeModel>,
+    connections_node_model: Vec<ConnectNodeDto>,
     show_connect_config: bool,
     add_node: button::State,
     node_screens: Vec<NodeScreen>,
@@ -32,6 +33,8 @@ pub struct ConnectNode {
     receive_screen: ReceiveScreen,
     show_option: Option<NodeOptions>,
     scroll: scrollable::State,
+    show_unlock: bool,
+    are_locked: Vec<NodeLock>,
 }
 
 #[derive(Debug, Clone)]
@@ -42,7 +45,7 @@ pub enum Message {
     SetUsername(String),
     SetPassword(String),
     SetPhrase(String),
-    GetConnections(Vec<ConnectNodeModel>),
+    GetConnections(Vec<ConnectNodeDto>),
     Connect,
     ShowConnectConfig,
     SetConnectionError(String),
@@ -53,6 +56,7 @@ pub enum Message {
     ReceiveMsg(ReceiveMessage),
     Lock,
     Unlock,
+    ShowUnlock,
 }
 
 impl ConnectNode {
@@ -81,6 +85,8 @@ impl ConnectNode {
             show_option: None,
             receive_screen: ReceiveScreen::new(),
             scroll: scrollable::State::new(),
+            show_unlock: false,
+            are_locked: vec![],
         }
     }
 
@@ -186,6 +192,9 @@ impl ConnectNode {
                 return Command::perform(delete_connection_task, |m| m);
             }
             Message::ReceiveMsg(receive_message) => self.receive_screen.update(receive_message),
+            Message::ShowUnlock => {
+                self.show_unlock = !self.show_unlock;
+            }
             Message::Lock => {}
             Message::Unlock => {}
         }
@@ -459,11 +468,13 @@ async fn add_connection(
     if let Err(response) = response_result {
         Message::SetConnectionError(response.to_string())
     } else {
-        Message::GetConnections(connections)
+        let connections_and_locked = get_connections_dto(connections).await;
+
+        Message::GetConnections(connections_and_locked)
     }
 }
 
-async fn get_info(node: ConnectNodeModel) -> Message {
+async fn get_info(node: ConnectNodeDto) -> Message {
     let rq_client = RqClient::new(
         node.address.clone(),
         node.account.clone(),
@@ -492,7 +503,7 @@ async fn delete_connection(name: String) -> Message {
     let connections_filtered = connections
         .into_iter()
         .filter(|c| *c.name != name)
-        .collect();
+        .collect::<Vec<ConnectNodeModel>>();
 
     let connection_db_string_result = serde_json::to_string(&connections_filtered);
 
@@ -508,11 +519,13 @@ async fn delete_connection(name: String) -> Message {
     if let Err(response) = response_result {
         Message::SetConnectionError(response.to_string())
     } else {
-        Message::GetConnections(connections_filtered)
+        let connections_and_locked = get_connections_dto(connections_filtered).await;
+
+        Message::GetConnections(connections_and_locked)
     }
 }
 
-async fn list_addresses(node: ConnectNodeModel) -> Message {
+async fn list_addresses(node: ConnectNodeDto) -> Message {
     let rq_client = RqClient::new(
         node.address.clone(),
         node.account.clone(),
@@ -530,5 +543,33 @@ async fn list_addresses(node: ConnectNodeModel) -> Message {
         Message::ShowAddresses(addresses.result)
     } else {
         Message::SetConnectionError("Error to get node info".to_string())
+    }
+}
+
+async fn lock_wallet(node: ConnectNodeModel) -> Message {
+    let rq_client = RqClient::new(
+        node.address.clone(),
+        node.account.clone(),
+        node.username.clone(),
+        node.password.clone(),
+        node.phrase.clone(),
+    );
+
+    let locked_result = rq_client.lock_wallet().await;
+
+    if let Err(locked_error) = locked_result {
+        return Message::SetConnectionError(locked_error.to_string());
+    }
+
+    if let Some(locked_error) = locked_result.unwrap().error {
+        Message::SetConnectionError(locked_error.message)
+    } else {
+        let connection_db = ConnectionDB::new().await;
+
+        let connections = connection_db.get_connections();
+
+        let connections_and_locked = get_connections_dto(connections).await;
+
+        Message::GetConnections(connections_and_locked)
     }
 }

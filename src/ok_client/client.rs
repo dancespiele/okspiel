@@ -73,7 +73,7 @@ impl RqClient {
     pub async fn send_to_address(
         &self,
         to_address: String,
-        amount: f32,
+        amount: f64,
     ) -> Result<NodeResponse<String>, Error> {
         let rq = self.get_request_builder();
 

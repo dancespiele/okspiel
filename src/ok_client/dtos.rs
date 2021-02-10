@@ -20,7 +20,7 @@ pub struct Info {
     txcount: f32,
     keypoololdest: f32,
     keypoolsize: f32,
-    unlocked_until: Option<f32>,
+    pub unlocked_until: Option<f32>,
 }
 
 #[derive(Debug, Deserialize)]
