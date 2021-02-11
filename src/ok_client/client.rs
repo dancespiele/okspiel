@@ -1,4 +1,4 @@
-use super::dtos::{Info, NodeResponse, Request};
+use super::dtos::{Info, NodeResponse, Request, StakeInfo};
 use core::f32;
 use reqwest::{Client, Error, RequestBuilder};
 use serde_json::{json, value::Value};
@@ -127,6 +127,20 @@ impl RqClient {
         .json::<NodeResponse<Option<String>>>()
         .await
     }
+
+    pub async fn get_staking_info(&self) -> Result<NodeResponse<StakeInfo>, Error> {
+        let rq = self.get_request_builder();
+
+        rq.json(&Request::from((
+            String::from("getstakinginfo"),
+            None,
+            json!(*self.nonce),
+        )))
+        .send()
+        .await?
+        .json::<NodeResponse<StakeInfo>>()
+        .await
+    }
 }
 
 #[tokio::test]
@@ -202,6 +216,21 @@ async fn should_lock_wallet() {
     );
 
     let response = rq_client.lock_wallet().await;
+
+    println!("response: {:?}", response);
+}
+
+#[tokio::test]
+async fn should_stake_wallet() {
+    let rq_client = RqClient::new(
+        String::from("http://127.0.0.1:6969/"),
+        String::from("default"),
+        String::from("prueba"),
+        String::from("test"),
+        String::from("test"),
+    );
+
+    let response = rq_client.get_staking_info().await;
 
     println!("response: {:?}", response);
 }

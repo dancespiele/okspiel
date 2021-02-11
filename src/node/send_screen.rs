@@ -1,37 +1,33 @@
-use super::{send_amount, SendAmount, SendAmountMsg};
-use crate::connect::ConnectNodeModel;
+use super::{SendAmount, SendAmountMsg};
+use crate::connect::ConnectNodeDto;
 use iced::{Column, Command, Element, Row, Text};
 
 pub struct SendScreen {
-    addresses: Vec<String>,
     senders: Vec<SendAmount>,
     is_locked: bool,
 }
 
-#[derive(Clone)]
-enum Message {
+#[derive(Clone, Debug)]
+pub enum Message {
     SendAmountMessage(usize, SendAmountMsg),
 }
 
 impl SendScreen {
     pub fn new() -> Self {
         Self {
-            addresses: vec![],
             senders: vec![],
             is_locked: false,
         }
     }
 
-    pub fn set_lock(&mut self, is_locked: bool) {
-        self.is_locked = is_locked;
-    }
-
-    pub fn set_addresses(&mut self, addresses: Vec<String>, node_model: ConnectNodeModel) {
+    pub fn set_addresses(&mut self, addresses: Vec<String>, node: ConnectNodeDto) {
         if !self.senders.is_empty() {
             self.senders = vec![];
         }
         addresses.into_iter().for_each(|address| {
-            let sender = SendAmount::new(address, node_model.clone());
+            let sender = SendAmount::new(address, node.clone());
+
+            self.is_locked = node.locked;
 
             self.senders.push(sender);
         });

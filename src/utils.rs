@@ -15,6 +15,8 @@ pub async fn get_connections_dto(connections_model: Vec<ConnectNodeModel>) -> Ve
 
         let wallet_info = rq_client.get_wallet_info().await.unwrap();
 
+        let staking_infor = rq_client.get_staking_info().await.unwrap().result;
+
         ConnectNodeDto::from((
             c.name,
             c.address,
@@ -22,11 +24,11 @@ pub async fn get_connections_dto(connections_model: Vec<ConnectNodeModel>) -> Ve
             c.username,
             c.password,
             c.phrase,
-            wallet_info.result.unlocked_until.is_none(),
+            wallet_info.result.unlocked_until.is_some()
+                && wallet_info.result.unlocked_until.unwrap() > 0.0,
+            staking_infor.enabled && staking_infor.staking,
         ))
     });
 
-    let connections_and_locked = connections_stream.collect::<Vec<ConnectNodeDto>>().await;
-
-    connections_and_locked
+    connections_stream.collect::<Vec<ConnectNodeDto>>().await
 }

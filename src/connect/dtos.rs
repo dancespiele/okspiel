@@ -17,11 +17,7 @@ pub struct ConnectNodeDto {
     pub password: String,
     pub phrase: String,
     pub locked: bool,
-}
-
-pub struct NodeLock {
-    pub name: String,
-    pub locked: bool,
+    pub staking: bool,
 }
 
 impl From<(String, String, String, String, String, String)> for ConnectNodeModel {
@@ -39,9 +35,9 @@ impl From<(String, String, String, String, String, String)> for ConnectNodeModel
     }
 }
 
-impl From<(String, String, String, String, String, String, bool)> for ConnectNodeDto {
-    fn from(connect_node: (String, String, String, String, String, String, bool)) -> Self {
-        let (name, address, account, username, password, phrase, locked) = connect_node;
+impl From<(String, String, String, String, String, String, bool, bool)> for ConnectNodeDto {
+    fn from(connect_node: (String, String, String, String, String, String, bool, bool)) -> Self {
+        let (name, address, account, username, password, phrase, locked, staking) = connect_node;
 
         Self {
             name,
@@ -51,6 +47,7 @@ impl From<(String, String, String, String, String, String, bool)> for ConnectNod
             password,
             phrase,
             locked,
+            staking,
         }
     }
 }

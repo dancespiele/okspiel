@@ -9,7 +9,6 @@ pub struct NodeScreen {
     button_lock_state: button::State,
     pick_options: pick_list::State<NodeOptions>,
     selected_option: NodeOptions,
-    is_locked: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -47,7 +46,6 @@ impl NodeScreen {
             delete_connection: button::State::new(),
             button_lock_state: button::State::new(),
             selected_option: NodeOptions::NodeName(connect_node_dto.name),
-            is_locked: true,
         }
     }
 
@@ -81,17 +79,19 @@ impl NodeScreen {
                 .push::<Element<ConnectMsg>>(
                     Button::new(
                         &mut self.button_lock_state,
-                        if self.is_locked {
+                        if self.node_connection_data.locked && !self.node_connection_data.staking {
                             Text::new("Unlock")
                         } else {
                             Text::new("Lock")
                         },
                     )
-                    .on_press(if self.is_locked {
-                        ConnectMsg::ShowUnlock
-                    } else {
-                        ConnectMsg::Lock
-                    })
+                    .on_press(
+                        if self.node_connection_data.locked && !self.node_connection_data.staking {
+                            ConnectMsg::ShowUnlock(self.node_connection_data.clone())
+                        } else {
+                            ConnectMsg::Lock(self.node_connection_data.clone())
+                        },
+                    )
                     .into(),
                 ),
         )

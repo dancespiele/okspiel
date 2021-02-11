@@ -1,9 +1,9 @@
-use crate::connect::ConnectNodeModel;
+use crate::connect::ConnectNodeDto;
 use crate::ok_client::RqClient;
 use iced::{text_input, Command, Element, Row, Text, TextInput};
 
 pub struct SendAmount {
-    node_model: ConnectNodeModel,
+    node: ConnectNodeDto,
     address: String,
     amount_input_state: text_input::State,
     amount_input_value: String,
@@ -20,9 +20,9 @@ pub enum Message {
 }
 
 impl SendAmount {
-    pub fn new(address: String, node_model: ConnectNodeModel) -> Self {
+    pub fn new(address: String, node: ConnectNodeDto) -> Self {
         Self {
-            node_model,
+            node,
             address,
             amount_input_state: text_input::State::new(),
             amount_input_value: String::from(""),
@@ -37,8 +37,7 @@ impl SendAmount {
                 self.amount_input_value = amount;
             }
             Message::SendAmount(amount) => {
-                let send_amount_task =
-                    send_amount(self.address.clone(), amount, self.node_model.clone());
+                let send_amount_task = send_amount(self.address.clone(), amount, self.node.clone());
 
                 return Command::perform(send_amount_task, |m| m);
             }
@@ -67,11 +66,7 @@ impl SendAmount {
     }
 }
 
-async fn send_amount(
-    address: String,
-    amount_string: String,
-    node_model: ConnectNodeModel,
-) -> Message {
+async fn send_amount(address: String, amount_string: String, node: ConnectNodeDto) -> Message {
     let amount_result = amount_string.parse::<f64>();
 
     if let Err(_) = amount_result {
@@ -79,11 +74,11 @@ async fn send_amount(
     }
 
     let rq_client = RqClient::new(
-        node_model.address.clone(),
-        node_model.account.clone(),
-        node_model.username.clone(),
-        node_model.password.clone(),
-        node_model.phrase.clone(),
+        node.address.clone(),
+        node.account.clone(),
+        node.username.clone(),
+        node.password.clone(),
+        node.phrase.clone(),
     );
 
     let response = rq_client

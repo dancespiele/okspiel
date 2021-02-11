@@ -14,6 +14,12 @@ pub struct ResponseError {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct StakeInfo {
+    pub enabled: bool,
+    pub staking: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Info {
     pub walletversion: f32,
     pub balance: f32,
