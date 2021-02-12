@@ -35,6 +35,19 @@ impl From<(String, String, String, String, String, String)> for ConnectNodeModel
     }
 }
 
+impl From<ConnectNodeDto> for ConnectNodeModel {
+    fn from(connect_node_dto: ConnectNodeDto) -> Self {
+        Self {
+            name: connect_node_dto.name,
+            address: connect_node_dto.address,
+            account: connect_node_dto.account,
+            username: connect_node_dto.username,
+            password: connect_node_dto.password,
+            phrase: connect_node_dto.phrase,
+        }
+    }
+}
+
 impl From<(String, String, String, String, String, String, bool, bool)> for ConnectNodeDto {
     fn from(connect_node: (String, String, String, String, String, String, bool, bool)) -> Self {
         let (name, address, account, username, password, phrase, locked, staking) = connect_node;

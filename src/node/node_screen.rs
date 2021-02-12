@@ -79,19 +79,17 @@ impl NodeScreen {
                 .push::<Element<ConnectMsg>>(
                     Button::new(
                         &mut self.button_lock_state,
-                        if self.node_connection_data.locked && !self.node_connection_data.staking {
+                        if self.node_connection_data.locked {
                             Text::new("Unlock")
                         } else {
                             Text::new("Lock")
                         },
                     )
-                    .on_press(
-                        if self.node_connection_data.locked && !self.node_connection_data.staking {
-                            ConnectMsg::ShowUnlock(self.node_connection_data.clone())
-                        } else {
-                            ConnectMsg::Lock(self.node_connection_data.clone())
-                        },
-                    )
+                    .on_press(if self.node_connection_data.locked {
+                        ConnectMsg::ShowUnlock(self.node_connection_data.clone())
+                    } else {
+                        ConnectMsg::Lock(self.node_connection_data.clone())
+                    })
                     .into(),
                 ),
         )

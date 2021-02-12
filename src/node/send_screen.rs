@@ -24,13 +24,18 @@ impl SendScreen {
         if !self.senders.is_empty() {
             self.senders = vec![];
         }
+
+        self.is_locked = node.locked;
+
         addresses.into_iter().for_each(|address| {
             let sender = SendAmount::new(address, node.clone());
 
-            self.is_locked = node.locked;
-
             self.senders.push(sender);
         });
+    }
+
+    pub fn set_locked(&mut self, node: ConnectNodeDto) {
+        self.is_locked = node.locked;
     }
 
     pub fn update(&mut self, msg: Message) -> Command<Message> {

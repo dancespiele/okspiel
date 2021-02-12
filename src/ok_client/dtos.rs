@@ -1,4 +1,12 @@
+use serde::__private::de;
 use serde_json::Value;
+
+#[derive(PartialEq)]
+pub enum Walletlocked {
+    Locked,
+    Unlocked,
+    Uncrypted,
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Request {
@@ -20,13 +28,14 @@ pub struct StakeInfo {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Info {
+pub struct WalletInfo {
     pub walletversion: f32,
     pub balance: f32,
     txcount: f32,
     keypoololdest: f32,
     keypoolsize: f32,
     pub unlocked_until: Option<f32>,
+    pub walletlocked: String,
 }
 
 #[derive(Debug, Deserialize)]

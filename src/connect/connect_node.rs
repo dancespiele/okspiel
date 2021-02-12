@@ -1,15 +1,14 @@
 use super::{ConnectNodeDto, ConnectNodeModel};
+use crate::db::ConnectionDB;
 use crate::node::{
     NodeOptions, NodeScreen, ReceiveMessage, ReceiveScreen, SendScreen, SendScreenMsg,
-    UnlockScreen, UnlockScreenMsg,
 };
-use crate::ok_client::{Info, RqClient};
+use crate::ok_client::{RqClient, WalletInfo};
 use crate::styles::ButtonStyles;
 use crate::utils::get_connections_dto;
-use crate::{db::ConnectionDB, node};
 use iced::{
-    button, scrollable, text_input, Align, Button, Column, Command, Container, Element, Length,
-    Row, Text, TextInput,
+    button, scrollable, text_input, Align, Button, Checkbox, Column, Command, Container, Element,
+    Length, Row, Text, TextInput,
 };
 
 pub struct ConnectNode {
@@ -32,13 +31,17 @@ pub struct ConnectNode {
     node_screens: Vec<NodeScreen>,
     show_connecion_error: (bool, String),
     show_disconnect_error: (bool, String),
-    node_info: Option<Info>,
+    node_info: Option<WalletInfo>,
     receive_screen: ReceiveScreen,
     send_screen: SendScreen,
     show_option: Option<NodeOptions>,
     scroll: scrollable::State,
-    unlock_screen: UnlockScreen,
     show_unlock: bool,
+    time_unlock_state: text_input::State,
+    time_unlock_value: String,
+    unlock_button_state: button::State,
+    staking_only: bool,
+    current_node: ConnectNodeDto,
 }
 
 #[derive(Debug, Clone)]
@@ -55,13 +58,15 @@ pub enum Message {
     SetConnectionError(String),
     Disconnect(String),
     SelectNodeOption(NodeOptions, String),
-    ShowInfo(Info),
+    ShowInfo(WalletInfo),
     ShowAddresses(Vec<String>, ConnectNodeDto),
     ReceiveMsg(ReceiveMessage),
     SendScreenMessage(SendScreenMsg),
-    UnlockScreenMessage(UnlockScreenMsg),
     Lock(ConnectNodeDto),
     ShowUnlock(ConnectNodeDto),
+    SetTimeUnlock(String),
+    SetStakingOnly(bool),
+    Unlock(ConnectNodeDto),
 }
 
 impl ConnectNode {
@@ -91,8 +96,21 @@ impl ConnectNode {
             receive_screen: ReceiveScreen::new(),
             send_screen: SendScreen::new(),
             scroll: scrollable::State::new(),
-            unlock_screen: UnlockScreen::new(),
             show_unlock: false,
+            time_unlock_state: text_input::State::new(),
+            time_unlock_value: "1000".to_string(),
+            unlock_button_state: button::State::new(),
+            staking_only: false,
+            current_node: ConnectNodeDto::from((
+                String::from(""),
+                String::from(""),
+                String::from(""),
+                String::from(""),
+                String::from(""),
+                String::from(""),
+                false,
+                false,
+            )),
         }
     }
 
@@ -191,6 +209,8 @@ impl ConnectNode {
                 self.show_unlock = false;
                 let mut node_screens: Vec<NodeScreen> = vec![];
 
+                self.send_screen.set_locked(self.current_node.clone());
+
                 for c in connections {
                     let node_screen = NodeScreen::new(c.clone());
                     node_screens.push(node_screen);
@@ -225,22 +245,34 @@ impl ConnectNode {
                     .update(send_message)
                     .map(Message::SendScreenMessage);
             }
-            Message::UnlockScreenMessage(show_unlock_msg) => {
-                return self
-                    .unlock_screen
-                    .update(show_unlock_msg)
-                    .map(Message::UnlockScreenMessage);
-            }
             Message::ShowUnlock(node) => {
                 self.show_unlock = true;
                 self.show_connect_config = false;
                 self.show_option = None;
-                self.unlock_screen.set_node(node);
+                self.current_node = node;
             }
             Message::Lock(node) => {
                 let lock_wallet_task = lock_wallet(node);
 
                 return Command::perform(lock_wallet_task, |m| m);
+            }
+            Message::SetTimeUnlock(time) => {
+                self.time_unlock_value = time;
+            }
+            Message::SetStakingOnly(value) => {
+                self.staking_only = value;
+
+                if self.staking_only {
+                    self.time_unlock_value = "0".to_string();
+                } else {
+                    self.time_unlock_value = "1000".to_string();
+                }
+            }
+            Message::Unlock(node) => {
+                let unlock_wallet_task =
+                    unlock_wallet(node, self.time_unlock_value.clone(), self.staking_only);
+
+                return Command::perform(unlock_wallet_task, |m| m);
             }
         }
 
@@ -462,8 +494,34 @@ impl ConnectNode {
                     }
                 } else if self.show_unlock {
                     Column::new()
+                        .padding(20)
                         .width(Length::FillPortion(3))
-                        .push(self.unlock_screen.view().map(Message::UnlockScreenMessage))
+                        .push::<Row<Message>>(
+                            Row::new()
+                                .padding(20)
+                                .push(Text::new("Time unlocked "))
+                                .push::<Element<Message>>(if !self.staking_only {
+                                    TextInput::new(
+                                        &mut self.time_unlock_state,
+                                        "seconds",
+                                        &self.time_unlock_value,
+                                        Message::SetTimeUnlock,
+                                    )
+                                    .into()
+                                } else {
+                                    Row::new().into()
+                                })
+                                .push(Checkbox::new(
+                                    self.staking_only,
+                                    "Staking only",
+                                    Message::SetStakingOnly,
+                                ))
+                                .spacing(10)
+                                .push::<Button<Message>>(
+                                    Button::new(&mut self.unlock_button_state, Text::new("Unlock"))
+                                        .on_press(Message::Unlock(self.current_node.clone())),
+                                ),
+                        )
                 } else {
                     Column::new().width(Length::FillPortion(3))
                 }),
@@ -623,5 +681,33 @@ async fn lock_wallet(node: ConnectNodeDto) -> Message {
         let connections_and_locked = get_connections_dto(connections).await;
 
         Message::GetConnections(connections_and_locked)
+    }
+}
+
+async fn unlock_wallet(node: ConnectNodeDto, time: String, staking_only: bool) -> Message {
+    let rq_client = RqClient::new(
+        node.address.clone(),
+        node.account.clone(),
+        node.username.clone(),
+        node.password.clone(),
+        node.phrase.clone(),
+    );
+
+    let response_result = rq_client
+        .unlock_wallet(time.parse::<u32>().unwrap(), staking_only)
+        .await;
+
+    if let Ok(response) = response_result {
+        if let Some(err_msg) = response.error {
+            return Message::SetConnectionError(err_msg.message);
+        }
+        let connection_db = ConnectionDB::new().await;
+
+        let connections = connection_db.get_connections();
+
+        let connections_and_locked = get_connections_dto(connections).await;
+        Message::GetConnections(connections_and_locked)
+    } else {
+        Message::SetConnectionError("Fail connecting with the rpc".to_string())
     }
 }

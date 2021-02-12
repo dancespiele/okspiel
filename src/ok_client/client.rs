@@ -1,5 +1,4 @@
-use super::dtos::{Info, NodeResponse, Request, StakeInfo};
-use core::f32;
+use super::dtos::{NodeResponse, Request, StakeInfo, WalletInfo};
 use reqwest::{Client, Error, RequestBuilder};
 use serde_json::{json, value::Value};
 use std::sync::{Arc, Mutex};
@@ -42,7 +41,7 @@ impl RqClient {
         request_builder.basic_auth(self.username.clone(), Some(self.pwd.clone()))
     }
 
-    pub async fn get_wallet_info(&self) -> Result<NodeResponse<Info>, Error> {
+    pub async fn get_wallet_info(&self) -> Result<NodeResponse<WalletInfo>, Error> {
         let rq = self.get_request_builder();
 
         rq.json(&Request::from((
@@ -52,7 +51,7 @@ impl RqClient {
         )))
         .send()
         .await?
-        .json::<NodeResponse<Info>>()
+        .json::<NodeResponse<WalletInfo>>()
         .await
     }
 
