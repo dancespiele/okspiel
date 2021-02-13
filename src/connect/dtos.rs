@@ -18,6 +18,7 @@ pub struct ConnectNodeDto {
     pub phrase: String,
     pub locked: bool,
     pub staking: bool,
+    pub connected: bool,
 }
 
 impl From<(String, String, String, String, String, String)> for ConnectNodeModel {
@@ -48,9 +49,34 @@ impl From<ConnectNodeDto> for ConnectNodeModel {
     }
 }
 
-impl From<(String, String, String, String, String, String, bool, bool)> for ConnectNodeDto {
-    fn from(connect_node: (String, String, String, String, String, String, bool, bool)) -> Self {
-        let (name, address, account, username, password, phrase, locked, staking) = connect_node;
+impl
+    From<(
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        bool,
+        bool,
+        bool,
+    )> for ConnectNodeDto
+{
+    fn from(
+        connect_node: (
+            String,
+            String,
+            String,
+            String,
+            String,
+            String,
+            bool,
+            bool,
+            bool,
+        ),
+    ) -> Self {
+        let (name, address, account, username, password, phrase, locked, staking, connected) =
+            connect_node;
 
         Self {
             name,
@@ -61,6 +87,7 @@ impl From<(String, String, String, String, String, String, bool, bool)> for Conn
             phrase,
             locked,
             staking,
+            connected,
         }
     }
 }
