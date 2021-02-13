@@ -14,8 +14,8 @@ use iced::{
 pub struct ConnectNode {
     name: text_input::State,
     pub name_value: String,
-    address: text_input::State,
-    pub address_value: String,
+    url: text_input::State,
+    pub url_value: String,
     account: text_input::State,
     pub account_value: String,
     username: text_input::State,
@@ -47,7 +47,7 @@ pub struct ConnectNode {
 #[derive(Debug, Clone)]
 pub enum Message {
     SetName(String),
-    SetAddress(String),
+    SetUrl(String),
     SetAccount(String),
     SetUsername(String),
     SetPassword(String),
@@ -74,8 +74,8 @@ impl ConnectNode {
         Self {
             name: text_input::State::new(),
             name_value: String::from(""),
-            address: text_input::State::new(),
-            address_value: String::from(""),
+            url: text_input::State::new(),
+            url_value: String::from(""),
             account: text_input::State::new(),
             account_value: String::from(""),
             username: text_input::State::new(),
@@ -127,8 +127,8 @@ impl ConnectNode {
             Message::SetName(name) => {
                 self.name_value = name;
             }
-            Message::SetAddress(addr) => {
-                self.address_value = addr;
+            Message::SetUrl(addr) => {
+                self.url_value = addr;
             }
             Message::SetAccount(account) => {
                 self.account_value = account;
@@ -201,7 +201,7 @@ impl ConnectNode {
             Message::GetConnections(ref connections) => {
                 self.connections_node_model = connections.to_vec();
                 self.name_value = String::from("");
-                self.address_value = String::from("");
+                self.url_value = String::from("");
                 self.account_value = String::from("");
                 self.username_value = String::from("");
                 self.password_value = String::from("");
@@ -223,7 +223,7 @@ impl ConnectNode {
 
                 let add_connection_task = add_connection(
                     self.name_value.clone(),
-                    self.address_value.clone(),
+                    self.url_value.clone(),
                     self.account_value.clone(),
                     self.username_value.clone(),
                     self.password_value.clone(),
@@ -353,10 +353,10 @@ impl ConnectNode {
                                         .push(Text::new("Address: "))
                                         .push::<Element<Message>>(
                                             TextInput::new(
-                                                &mut self.address,
-                                                "address node",
-                                                self.address_value.as_ref(),
-                                                Message::SetAddress,
+                                                &mut self.url,
+                                                "url node",
+                                                self.url_value.as_ref(),
+                                                Message::SetUrl,
                                             )
                                             .into(),
                                         ),
@@ -532,14 +532,26 @@ impl ConnectNode {
 
 async fn add_connection(
     name: String,
-    address: String,
+    url: String,
     account: String,
     username: String,
     password: String,
     phrase: String,
 ) -> Message {
+    if name.is_empty() {
+        return Message::SetConnectionError("name of connection is required".to_string());
+    } else if url.is_empty() {
+        return Message::SetConnectionError("node url is required".to_string());
+    } else if account.is_empty() {
+        return Message::SetConnectionError("account is required".to_string());
+    } else if username.is_empty() {
+        return Message::SetConnectionError("username is required".to_string());
+    } else if password.is_empty() {
+        return Message::SetConnectionError("password is required".to_string());
+    }
+
     let rq_client = RqClient::new(
-        address.clone(),
+        url.clone(),
         account.clone(),
         username.clone(),
         password.clone(),
@@ -561,7 +573,7 @@ async fn add_connection(
     let mut connections = connection_db.get_connections();
 
     connections.push(ConnectNodeModel::from((
-        name, address, account, username, password, phrase,
+        name, url, account, username, password, phrase,
     )));
 
     let connection_db_string_result = serde_json::to_string(&connections);

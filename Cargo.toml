@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.1", features = ["full"] }
+tokio = { version = "1.2", features = ["full"] }
 iced = {git = "https://github.com/hecrj/iced.git", features = ["tokio", "glow", "glow_qr_code"], branch = "master"}
 sled = "0.34"
 serde = "1.0"
@@ -17,3 +17,4 @@ reqwest= {version = "0.11", features = ["json"]}
 dirs= "3.0"
 copypasta= "0.7"
 futures= "0.3"
+dotenv = "0.15"

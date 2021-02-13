@@ -73,7 +73,7 @@ impl RqClient {
         &self,
         to_address: String,
         amount: f64,
-    ) -> Result<NodeResponse<String>, Error> {
+    ) -> Result<NodeResponse<Option<String>>, Error> {
         let rq = self.get_request_builder();
 
         rq.json(&Request::from((
@@ -87,7 +87,7 @@ impl RqClient {
         )))
         .send()
         .await?
-        .json::<NodeResponse<String>>()
+        .json::<NodeResponse<Option<String>>>()
         .await
     }
 
@@ -144,13 +144,18 @@ impl RqClient {
 
 #[tokio::test]
 async fn should_get_wallet_info() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let wallet_info = rq_client.get_wallet_info().await.unwrap();
 
@@ -159,13 +164,18 @@ async fn should_get_wallet_info() {
 
 #[tokio::test]
 async fn should_get_addresses() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let addresses = rq_client.get_addresses().await.unwrap();
 
@@ -174,13 +184,18 @@ async fn should_get_addresses() {
 
 #[tokio::test]
 async fn should_send_amount() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let response = rq_client
         .send_to_address("PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx".to_string(), 0.1)
@@ -191,13 +206,18 @@ async fn should_send_amount() {
 
 #[tokio::test]
 async fn should_unlock_wallet() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let response = rq_client.unlock_wallet(1000, false).await;
 
@@ -206,13 +226,18 @@ async fn should_unlock_wallet() {
 
 #[tokio::test]
 async fn should_lock_wallet() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let response = rq_client.lock_wallet().await;
 
@@ -221,13 +246,18 @@ async fn should_lock_wallet() {
 
 #[tokio::test]
 async fn should_stake_wallet() {
-    let rq_client = RqClient::new(
-        String::from("http://127.0.0.1:6969/"),
-        String::from("default"),
-        String::from("prueba"),
-        String::from("test"),
-        String::from("test"),
-    );
+    use dotenv::dotenv;
+    use std::env;
+
+    dotenv().ok();
+
+    let url = env::var("URL").unwrap();
+    let account = env::var("ACCOUNT").unwrap();
+    let rpcuser = env::var("RPCUSER").unwrap();
+    let rpcpassword = env::var("RPCPASSWORD").unwrap();
+    let phrase = env::var("PHRASE").unwrap();
+
+    let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let response = rq_client.get_staking_info().await;
 
