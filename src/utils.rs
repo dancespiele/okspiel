@@ -26,7 +26,7 @@ pub async fn get_connections_dto(connections_model: Vec<ConnectNodeModel>) -> Ve
                     c.username,
                     c.password,
                     c.phrase,
-                    get_wallet_locked(&wallet_info.result.walletlocked) == Walletlocked::Locked,
+                    get_wallet_locked(&wallet_info.result.walletlocked),
                     staking_info.result.enabled && staking_info.result.staking,
                     true,
                 ));
@@ -34,7 +34,15 @@ pub async fn get_connections_dto(connections_model: Vec<ConnectNodeModel>) -> Ve
         }
 
         ConnectNodeDto::from((
-            c.name, c.address, c.account, c.username, c.password, c.phrase, false, false, false,
+            c.name,
+            c.address,
+            c.account,
+            c.username,
+            c.password,
+            c.phrase,
+            Walletlocked::Locked,
+            false,
+            false,
         ))
     });
 

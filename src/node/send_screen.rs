@@ -1,10 +1,11 @@
 use super::{SendAmount, SendAmountMsg};
 use crate::connect::ConnectNodeDto;
+use crate::ok_client::Walletlocked;
 use iced::{Column, Command, Element, Row, Text};
 
 pub struct SendScreen {
     senders: Vec<SendAmount>,
-    is_locked: bool,
+    status: Walletlocked,
 }
 
 #[derive(Clone, Debug)]
@@ -16,7 +17,7 @@ impl SendScreen {
     pub fn new() -> Self {
         Self {
             senders: vec![],
-            is_locked: false,
+            status: Walletlocked::Locked,
         }
     }
 
@@ -25,7 +26,7 @@ impl SendScreen {
             self.senders = vec![];
         }
 
-        self.is_locked = node.locked;
+        self.status = node.status.clone();
 
         addresses.into_iter().for_each(|address| {
             let sender = SendAmount::new(address, node.clone());
@@ -35,7 +36,7 @@ impl SendScreen {
     }
 
     pub fn set_locked(&mut self, node: ConnectNodeDto) {
-        self.is_locked = node.locked;
+        self.status = node.status;
     }
 
     pub fn update(&mut self, msg: Message) -> Command<Message> {
@@ -47,7 +48,7 @@ impl SendScreen {
     }
 
     pub fn view(&mut self) -> Element<Message> {
-        if self.is_locked {
+        if self.status == Walletlocked::Locked {
             Row::new()
                 .padding(20)
                 .push(Text::new(

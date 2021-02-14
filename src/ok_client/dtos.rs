@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub enum Walletlocked {
     Locked,
     Unlocked,

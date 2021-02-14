@@ -1,3 +1,5 @@
+use crate::ok_client::Walletlocked;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ConnectNodeModel {
     pub name: String,
@@ -16,7 +18,7 @@ pub struct ConnectNodeDto {
     pub username: String,
     pub password: String,
     pub phrase: String,
-    pub locked: bool,
+    pub status: Walletlocked,
     pub staking: bool,
     pub connected: bool,
 }
@@ -57,7 +59,7 @@ impl
         String,
         String,
         String,
-        bool,
+        Walletlocked,
         bool,
         bool,
     )> for ConnectNodeDto
@@ -70,12 +72,12 @@ impl
             String,
             String,
             String,
-            bool,
+            Walletlocked,
             bool,
             bool,
         ),
     ) -> Self {
-        let (name, address, account, username, password, phrase, locked, staking, connected) =
+        let (name, address, account, username, password, phrase, status, staking, connected) =
             connect_node;
 
         Self {
@@ -85,7 +87,7 @@ impl
             username,
             password,
             phrase,
-            locked,
+            status,
             staking,
             connected,
         }

@@ -1,6 +1,7 @@
 use crate::connect::{ConnectMsg, ConnectNodeDto};
+use crate::ok_client::Walletlocked;
 use crate::styles::ButtonStyles;
-use iced::{button, pick_list, Button, Container, Element, PickList, Row, Text};
+use iced::{button, pick_list, Button, Column, Container, Element, PickList, Row, Text};
 
 #[derive(Debug, Clone)]
 pub struct NodeScreen {
@@ -77,20 +78,26 @@ impl NodeScreen {
                         .into(),
                 )
                 .push::<Element<ConnectMsg>>(
-                    Button::new(
-                        &mut self.button_lock_state,
-                        if self.node_connection_data.locked {
-                            Text::new("Unlock")
-                        } else {
-                            Text::new("Lock")
-                        },
-                    )
-                    .on_press(if self.node_connection_data.locked {
-                        ConnectMsg::ShowUnlock(self.node_connection_data.clone())
+                    if self.node_connection_data.status != Walletlocked::Uncrypted {
+                        Button::new(
+                            &mut self.button_lock_state,
+                            if self.node_connection_data.status == Walletlocked::Locked {
+                                Text::new("Unlock")
+                            } else {
+                                Text::new("Lock")
+                            },
+                        )
+                        .on_press(
+                            if self.node_connection_data.status == Walletlocked::Locked {
+                                ConnectMsg::ShowUnlock(self.node_connection_data.clone())
+                            } else {
+                                ConnectMsg::Lock(self.node_connection_data.clone())
+                            },
+                        )
+                        .into()
                     } else {
-                        ConnectMsg::Lock(self.node_connection_data.clone())
-                    })
-                    .into(),
+                        Column::new().into()
+                    },
                 ),
         )
         .into()

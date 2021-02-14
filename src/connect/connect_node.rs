@@ -3,7 +3,7 @@ use crate::db::ConnectionDB;
 use crate::node::{
     NodeOptions, NodeScreen, ReceiveMessage, ReceiveScreen, SendScreen, SendScreenMsg,
 };
-use crate::ok_client::{RqClient, WalletInfo};
+use crate::ok_client::{RqClient, WalletInfo, Walletlocked};
 use crate::styles::ButtonStyles;
 use crate::utils::get_connections_dto;
 use iced::{
@@ -42,6 +42,7 @@ pub struct ConnectNode {
     unlock_button_state: button::State,
     staking_only: bool,
     current_node: ConnectNodeDto,
+    loading: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -108,10 +109,11 @@ impl ConnectNode {
                 String::from(""),
                 String::from(""),
                 String::from(""),
-                false,
+                Walletlocked::Unlocked,
                 false,
                 false,
             )),
+            loading: false,
         }
     }
 
@@ -141,9 +143,11 @@ impl ConnectNode {
                 self.password_value = pwd;
             }
             Message::ShowInfo(info) => {
+                self.loading = false;
                 self.node_info = Some(info);
             }
             Message::ShowAddresses(addresses, node) => {
+                self.loading = false;
                 if let Some(option) = self.show_option.clone() {
                     match option {
                         NodeOptions::Receive => {
@@ -159,6 +163,7 @@ impl ConnectNode {
                 self.remove_messages();
                 self.remove_selected();
                 self.show_unlock = false;
+                self.loading = true;
 
                 if let Some(position) = position_option {
                     match node_selected {
@@ -197,6 +202,7 @@ impl ConnectNode {
                 self.phrase_value = phase;
             }
             Message::SetConnectionError(error) => {
+                self.loading = false;
                 self.show_connecion_error = (true, error);
             }
             Message::GetConnections(ref connections) => {
@@ -209,6 +215,7 @@ impl ConnectNode {
                 self.phrase_value = String::from("");
                 self.show_unlock = false;
                 let mut node_screens: Vec<NodeScreen> = vec![];
+                self.loading = false;
 
                 self.send_screen.set_locked(self.current_node.clone());
 
@@ -231,10 +238,12 @@ impl ConnectNode {
                     self.phrase_value.clone(),
                 );
 
+                self.loading = true;
                 return Command::perform(add_connection_task, |m| m);
             }
             Message::Disconnect(name) => {
                 self.show_disconnect_error = (false, String::from(""));
+                self.loading = true;
                 let delete_connection_task = delete_connection(name);
 
                 return Command::perform(delete_connection_task, |m| m);
@@ -254,6 +263,7 @@ impl ConnectNode {
             }
             Message::Lock(node) => {
                 let lock_wallet_task = lock_wallet(node);
+                self.loading = true;
 
                 return Command::perform(lock_wallet_task, |m| m);
             }
@@ -273,6 +283,7 @@ impl ConnectNode {
                 let unlock_wallet_task =
                     unlock_wallet(node, self.time_unlock_value.clone(), self.staking_only);
 
+                self.loading = true;
                 return Command::perform(unlock_wallet_task, |m| m);
             }
         }
@@ -323,7 +334,13 @@ impl ConnectNode {
                         )
                         .into(),
                 )
-                .push::<Column<Message>>(if self.show_connect_config {
+                .push::<Column<Message>>(if self.loading {
+                    Column::new()
+                        .width(Length::Fill)
+                        .padding(50)
+                        .align_items(Align::Center)
+                        .push(Text::new("LOADING"))
+                } else if self.show_connect_config {
                     Column::new()
                         .width(Length::Fill)
                         .align_items(Align::End)
@@ -479,6 +496,21 @@ impl ConnectNode {
                                                         node_info.balance
                                                     )),
                                                 ),
+                                            ),
+                                    )
+                                    .push(
+                                        Row::new()
+                                            .padding(20)
+                                            .spacing(10)
+                                            .push(
+                                                Column::new()
+                                                    .width(Length::FillPortion(2))
+                                                    .push(Text::new("Status: ")),
+                                            )
+                                            .push(
+                                                Column::new()
+                                                    .width(Length::FillPortion(2))
+                                                    .push(Text::new(node_info.walletlocked)),
                                             ),
                                     )
                             } else {
