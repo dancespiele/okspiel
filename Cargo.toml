@@ -3,7 +3,12 @@ name = "okspiel"
 version = "0.1.0"
 authors = ["spielcrypto <spielcrypto@gmail.com>"]
 edition = "2018"
-
+license = "MIT"
+description = "Desktop application to handle remotely multiple Okcash full node wallets"
+homepage = "https://github.com/dancespiele/okspiel"
+readme = "README.md"
+repository = "https://github.com/dancespiele/okspiel"
+categories = ["cryptography::cryptocurrencies", "gui", "asynchronous"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
