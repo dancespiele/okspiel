@@ -68,7 +68,7 @@ Please if you find some bug or you have suggestions open an issue or ping me in 
 ## Road map
 
 - [x] Connection to multiple wallets
-- [x] Wallet info, Receive and Send amount
+- [x] Wallet info, copy addresses and Send amount
 - [ ] Compatibility to another OS (only is tested in Linux)
 - [ ] Create executables for different Linux distributions, Mac and Windows
 - [ ] Improve UX
