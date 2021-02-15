@@ -13,7 +13,15 @@ For now only is tested in Linux but should work in Mac. In Windows could be not 
 
 ### Installation
 
-`cargo install okspiel`
+From terminal:
+
+1. `git clone https://github.com/dancespiele/okspiel.git`
+2. `cd okspiel`
+3. `cargo build --release`
+4. Copy the binary from `okspiel/target/release/okspiel` to `~/.cargo/bin`
+5. Enjoy!
+
+**Note**: I will publish the fist crate version `0.1.0` when the version `0.3.0` of `Iced` is released. You can see an open issue [here](https://github.com/hecrj/iced/issues/706#issuecomment-779251854)
 
 ### Start the app
 
@@ -34,8 +42,6 @@ rpcallowip=[IP_WHERE_IS_THE_OKSPIEL]
 
 ## Run test
 
-1. Clone the sources `git clone https://github.com/dancespiele/okspiel.git`
-
 You need to include `.env` in the root folder of your project with the next variables:
 
 ```
@@ -51,6 +57,9 @@ After `.env` file is included, go to okspiel sources with the terminal and execu
 
 **Warning**: there is a test for send transaction that will send a quantity of 0,01 $OK + fees to the address that you set in `ADDRESS_TO_SEND_TEST_AMOUNT`
 
+### Where Okspiel is saving the data connection
+
+Once that Okspiel is running for the first time the app create a hide folder in your home directory which calls `.okspiel`
 
 ## Support
 
@@ -60,7 +69,8 @@ Please if you find some bug or you have suggestions open an issue or ping me in 
 
 - [x] Connection to multiple wallets
 - [x] Wallet info, Receive and Send amount
-- [ ] Compatibility to another OS (only is tested in linux)
+- [ ] Compatibility to another OS (only is tested in Linux)
+- [ ] Create executables for different Linux distributions, Mac and Windows
 - [ ] Improve UX
 - [ ] List of transactions
 - [ ] handler multiple accounts instead of only be possible to connect to one account
