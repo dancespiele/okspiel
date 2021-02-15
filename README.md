@@ -17,12 +17,12 @@ For now only is tested in Linux but should work in Mac. In Windows could be not 
 
 ### Start the app
 
-execute okspiel
+execute `okspiel` in you terminal
 
 ### Connecting with remote wallet full node
 
-1º Open the okcash config file of your wallet full node where you want to connect
-2º Include this:
+1. Open the okcash config file of your wallet full node where you want to connect
+2. Include this:
 
 ```
 listen=1
