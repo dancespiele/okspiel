@@ -25,7 +25,7 @@ From terminal:
 
 ### Start the app
 
-execute `okspiel` in you terminal
+Execute `okspiel` in you terminal
 
 ### Connecting with remote wallet full node
 
@@ -40,7 +40,7 @@ whitelist=[IP_WHERE_IS_THE_OKSPIEL]
 rpcallowip=[IP_WHERE_IS_THE_OKSPIEL]
 ```
 
-## Run test
+## Run tests
 
 You need to include `.env` in the root folder of your project with the next variables:
 
