@@ -60,7 +60,7 @@ Please if you find some bug or you have suggestions open an issue or ping me in 
 
 - [x] Connection to multiple wallets
 - [x] Wallet info, Receive and Send amount
-- [ ] Compatibility to another systems
+- [ ] Compatibility to another OS (only is tested in linux)
 - [ ] Improve UX
 - [ ] List of transactions
 - [ ] handler multiple accounts instead of only be possible to connect to one account

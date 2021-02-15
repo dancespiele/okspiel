@@ -2,8 +2,6 @@ use crate::connect::ConnectNodeDto;
 use crate::ok_client::RqClient;
 use iced::{button, text_input, Button, Column, Command, Element, Row, Text, TextInput};
 
-use super::address;
-
 pub struct SendAmount {
     node: ConnectNodeDto,
     address: String,
