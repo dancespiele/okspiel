@@ -194,11 +194,12 @@ async fn should_send_amount() {
     let rpcuser = env::var("RPCUSER").unwrap();
     let rpcpassword = env::var("RPCPASSWORD").unwrap();
     let phrase = env::var("PHRASE").unwrap();
+    let address_to_send_test_amount = env::var("ADDRESS_TO_SEND_TEST_AMOUNT").unwrap();
 
     let rq_client = RqClient::new(url, account, rpcuser, rpcpassword, phrase);
 
     let response = rq_client
-        .send_to_address("PMRhm1Zkt8fgBWjK6GKviXuTTr5ftEdQtx".to_string(), 0.1)
+        .send_to_address(address_to_send_test_amount, 0.01)
         .await;
 
     println!("response: {:?}", response);
