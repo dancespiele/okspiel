@@ -1,3 +1,4 @@
+use crate::styles::ButtonStyles;
 use copypasta::{ClipboardContext, ClipboardProvider};
 use iced::{button, Button, Element, HorizontalAlignment, Length, Row, Text};
 
@@ -37,6 +38,7 @@ impl Address {
                     Text::new("Copy").horizontal_alignment(HorizontalAlignment::Center),
                 )
                 .on_press(Message::CopyAddress(self.address.clone()))
+                .style(ButtonStyles::Success)
                 .padding(3)
                 .width(Length::FillPortion(2)),
             )

@@ -1,6 +1,7 @@
 use crate::connect::ConnectNodeDto;
 use crate::ok_client::RqClient;
-use iced::{button, text_input, Button, Column, Command, Element, Row, Text, TextInput};
+use crate::styles::ButtonStyles;
+use iced::{button, text_input, Align, Button, Column, Command, Element, Row, Text, TextInput};
 
 pub struct SendAmount {
     node: ConnectNodeDto,
@@ -95,8 +96,10 @@ impl SendAmount {
                     .spacing(10)
                     .push(
                         Button::new(&mut self.send_amount_state, Text::new("Send"))
-                            .on_press(Message::SendAmount),
-                    ),
+                            .on_press(Message::SendAmount)
+                            .style(ButtonStyles::Confirm),
+                    )
+                    .align_items(Align::Center),
             )
             .padding(20)
             .push(Text::new(
