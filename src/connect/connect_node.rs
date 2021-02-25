@@ -7,7 +7,7 @@ use crate::ok_client::{RqClient, WalletInfo, Walletlocked};
 use crate::styles::ButtonStyles;
 use crate::utils::get_connections_dto;
 use iced::{
-    button, scrollable, text_input, Align, Button, Checkbox, Column, Command, Container, Element,
+    button, scrollable, Scrollable, text_input, Align, Button, Checkbox, Column, Command, Container, Element,
     Length, Row, Text, TextInput,
 };
 
@@ -518,11 +518,14 @@ impl ConnectNode {
                                 Column::new().width(Length::FillPortion(3))
                             }
                         }
-                        NodeOptions::Receive => Column::new().padding(20).push::<Element<Message>>(
-                            self.receive_screen.view().map(Message::ReceiveMsg),
+                        NodeOptions::Receive => Column::new().padding(20).push::<Scrollable<Message>>(
+                            Scrollable::new(&mut self.scroll)
+                            .push::<Element<Message>>(self.receive_screen.view().map(Message::ReceiveMsg)),
                         ),
-                        NodeOptions::Send => Column::new().padding(20).push::<Element<Message>>(
-                            self.send_screen.view().map(Message::SendScreenMessage),
+                        NodeOptions::Send => Column::new().padding(20).push::<Scrollable<Message>>(
+                            Scrollable::new(&mut self.scroll)
+                            .push::<Element<Message>>(self.send_screen.view().map(Message::SendScreenMessage))
+                            
                         ),
                         _ => Column::new().width(Length::FillPortion(3)),
                     }
