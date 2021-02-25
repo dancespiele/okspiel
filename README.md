@@ -9,7 +9,7 @@ For now only is tested in Linux but should work in Mac. In Windows could be not 
 ### Requirements
 
 * Rustup (you can install from here https://www.rust-lang.org/learn/get-started)
-* For now you need to compile [Okcash full node wallet](https://github.com/okcashpro/okcash) from master repository until the version 6.9.0.6 is released  
+* Okcash version 6.9.0.6 or last one  
 
 ### Installation
 
@@ -21,7 +21,7 @@ From terminal:
 4. Copy the binary from `okspiel/target/release/okspiel` to `~/.cargo/bin`
 5. Enjoy!
 
-**Note**: I will publish the fist crate version `0.1.0` when the version `0.3.0` of `Iced` is released. You can see an open issue [here](https://github.com/hecrj/iced/issues/706#issuecomment-779251854)
+**Note**: I will publish the fist crate version `0.2.0` when the version `0.3.0` of `Iced` is released. You can see an open issue [here](https://github.com/hecrj/iced/issues/706#issuecomment-779251854)
 
 ### Start the app
 
@@ -69,6 +69,7 @@ Please if you find some bug or you have suggestions open an issue or ping me in 
 
 - [x] Connection to multiple wallets
 - [x] Wallet info, copy addresses and Send amount
+- [x] Migrate glow to wgpu
 - [ ] Compatibility to another OS (only is tested in Linux)
 - [ ] Create executables for different Linux distributions, Mac and Windows
 - [ ] Improve UX

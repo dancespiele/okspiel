@@ -7,7 +7,7 @@ use crate::ok_client::{RqClient, WalletInfo, Walletlocked};
 use crate::styles::ButtonStyles;
 use crate::utils::get_connections_dto;
 use iced::{
-    button, scrollable, text_input, Align, Button, Checkbox, Column, Command, Container, Element,
+    button, scrollable, Scrollable, text_input, Align, Button, Checkbox, Column, Command, Container, Element,
     Length, Row, Text, TextInput,
 };
 
@@ -368,16 +368,16 @@ impl ConnectNode {
                                     Row::new()
                                         .padding(20)
                                         .spacing(10)
-                                        .push(Text::new("Address: "))
+                                        .push(Text::new("URL: "))
                                         .push::<Element<Message>>(
-                                            TextInput::new(
-                                                &mut self.url,
-                                                "url node",
-                                                self.url_value.as_ref(),
-                                                Message::SetUrl,
-                                            )
-                                            .into(),
-                                        ),
+                                        TextInput::new(
+                                            &mut self.url,
+                                            "url node",
+                                            self.url_value.as_ref(),
+                                            Message::SetUrl,
+                                        )
+                                        .into(),
+                                    ),
                                 )
                                 .push(
                                     Row::new()
@@ -444,7 +444,8 @@ impl ConnectNode {
                                 .push(
                                     Row::new().padding(10).height(Length::FillPortion(2)).push(
                                         Button::new(&mut self.connect, Text::new("Connect"))
-                                            .on_press(Message::Connect),
+                                            .on_press(Message::Connect)
+                                            .style(ButtonStyles::Confirm),
                                     ),
                                 )
                                 .push(if self.show_connecion_error.0 {
@@ -517,11 +518,14 @@ impl ConnectNode {
                                 Column::new().width(Length::FillPortion(3))
                             }
                         }
-                        NodeOptions::Receive => Column::new().padding(20).push::<Element<Message>>(
-                            self.receive_screen.view().map(Message::ReceiveMsg),
+                        NodeOptions::Receive => Column::new().padding(20).push::<Scrollable<Message>>(
+                            Scrollable::new(&mut self.scroll)
+                            .push::<Element<Message>>(self.receive_screen.view().map(Message::ReceiveMsg)),
                         ),
-                        NodeOptions::Send => Column::new().padding(20).push::<Element<Message>>(
-                            self.send_screen.view().map(Message::SendScreenMessage),
+                        NodeOptions::Send => Column::new().padding(20).push::<Scrollable<Message>>(
+                            Scrollable::new(&mut self.scroll)
+                            .push::<Element<Message>>(self.send_screen.view().map(Message::SendScreenMessage))
+                            
                         ),
                         _ => Column::new().width(Length::FillPortion(3)),
                     }
@@ -552,8 +556,10 @@ impl ConnectNode {
                                 .spacing(10)
                                 .push::<Button<Message>>(
                                     Button::new(&mut self.unlock_button_state, Text::new("Unlock"))
+                                        .style(ButtonStyles::Confirm)
                                         .on_press(Message::Unlock(self.current_node.clone())),
-                                ),
+                                )
+                                .align_items(Align::Center),
                         )
                 } else {
                     Column::new().width(Length::FillPortion(3))

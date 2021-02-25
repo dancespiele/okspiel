@@ -1,7 +1,9 @@
 use crate::connect::{ConnectMsg, ConnectNodeDto};
 use crate::ok_client::Walletlocked;
 use crate::styles::ButtonStyles;
-use iced::{button, pick_list, Button, Column, Container, Element, PickList, Row, Text};
+use iced::{
+    button, pick_list, Button, Column, Container, Element, Length, PickList, Row, Svg,
+};
 
 #[derive(Debug, Clone)]
 pub struct NodeScreen {
@@ -70,23 +72,36 @@ impl NodeScreen {
                     .into(),
                 )
                 .push::<Element<ConnectMsg>>(
-                    Button::new(&mut self.delete_connection, Text::new("DELETE"))
-                        .style(ButtonStyles::Delete)
-                        .on_press(ConnectMsg::Disconnect(
-                            self.node_connection_data.name.clone(),
-                        ))
-                        .into(),
+                    Button::new(
+                        &mut self.delete_connection,
+                        Svg::from_path("assets/trash-2.svg"),
+                    )
+                    .style(ButtonStyles::Delete)
+                    .height(Length::Units(30))
+                    .on_press(ConnectMsg::Disconnect(
+                        self.node_connection_data.name.clone(),
+                    ))
+                    .into(),
                 )
+                .spacing(10)
                 .push::<Element<ConnectMsg>>(
                     if self.node_connection_data.status != Walletlocked::Uncrypted {
                         Button::new(
                             &mut self.button_lock_state,
                             if self.node_connection_data.status == Walletlocked::Locked {
-                                Text::new("Unlock")
+                                Svg::from_path("assets/unlock.svg")
                             } else {
-                                Text::new("Lock")
+                                Svg::from_path("assets/lock.svg")
                             },
                         )
+                        .style(
+                            if self.node_connection_data.status == Walletlocked::Locked {
+                                ButtonStyles::Warnning
+                            } else {
+                                ButtonStyles::Success
+                            },
+                        )
+                        .height(Length::Units(30))
                         .on_press(
                             if self.node_connection_data.status == Walletlocked::Locked {
                                 ConnectMsg::ShowUnlock(self.node_connection_data.clone())

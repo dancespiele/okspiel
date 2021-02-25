@@ -1,6 +1,6 @@
 [package]
 name = "okspiel"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["spielcrypto <spielcrypto@gmail.com>"]
 edition = "2018"
 license = "MIT"
@@ -16,7 +16,7 @@ opt-level = "z"
 
 [dependencies]
 tokio = { version = "1.2", features = ["full"] }
-iced = {git = "https://github.com/hecrj/iced.git", features = ["tokio", "glow", "glow_qr_code"], branch = "master"}
+iced = {git = "https://github.com/hecrj/iced.git", features = ["tokio", "qr_code", "svg"], branch = "master"}
 sled = "0.34"
 serde = "1.0"
 serde_json = "1.0"
